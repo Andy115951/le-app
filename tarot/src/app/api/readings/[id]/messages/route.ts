@@ -176,9 +176,9 @@ export async function POST(
       const messages = await listMessages(id);
       write({ t: "done", messages });
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "发送失败" },
+      { error: "发送失败，请稍后重试。" },
       { status: 500 },
     );
   }

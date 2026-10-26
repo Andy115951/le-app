@@ -18,10 +18,10 @@ export function ndjsonStreamResponse(
       };
       try {
         await run(write);
-      } catch (e) {
+      } catch {
         write({
           t: "error",
-          error: e instanceof Error ? e.message : "生成失败",
+          error: "生成暂时失败，请稍后重试。",
         });
       } finally {
         controller.close();

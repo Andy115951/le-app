@@ -1,5 +1,7 @@
 "use client";
 
+import { isQuotaExhausted, QUOTA_UNAVAILABLE_MESSAGE } from "@/lib/quota-state";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CUSTOM_SCENE, SCENES, type SceneId } from "@/data/scenes";
@@ -22,6 +24,7 @@ export function QuickStartButton({
 }) {
   const router = useRouter();
   const quotaState = useQuota();
+  const quotaUnavailable = quotaState.loading || Boolean(quotaState.error);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [quotaBlocked, setQuotaBlocked] = useState(false);
@@ -31,12 +34,16 @@ export function QuickStartButton({
   if (question.length < 4) return null;
 
   const readingsExhausted =
-    !quotaState.loading && quotaState.remaining.readings <= 0;
+    isQuotaExhausted(quotaState, "readings");
 
   async function onQuickStart(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (loading) return;
+    if (loading || quotaState.loading) return;
+    if (quotaState.error) {
+      setError(QUOTA_UNAVAILABLE_MESSAGE);
+      return;
+    }
     if (readingsExhausted) {
       setQuotaBlocked(true);
       setError(
@@ -86,11 +93,11 @@ export function QuickStartButton({
         type="button"
         size="sm"
         variant="secondary"
-        disabled={loading || readingsExhausted}
+        disabled={loading || quotaUnavailable || readingsExhausted}
         onClick={onQuickStart}
         className="w-full sm:w-auto"
       >
-        {loading ? "起卦中…" : readingsExhausted ? "今日额度已用尽" : label}
+        {loading ? "起卦中…" : quotaState.error ? "额度暂不可用" : readingsExhausted ? "今日额度已用尽" : label}
       </Button>
       {error ? (
         <div className="mt-2 space-y-2" role="alert">

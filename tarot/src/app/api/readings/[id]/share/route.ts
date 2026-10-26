@@ -42,9 +42,9 @@ export async function GET(
       path: token ? publicSharePath(token) : null,
       url: token ? publicShareAbsoluteUrl(token, originFrom(req)) : null,
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "查询失败" },
+      { error: "查询失败，请稍后重试。" },
       { status: 500 },
     );
   }
@@ -78,9 +78,9 @@ export async function POST(
       path: publicSharePath(token),
       url: publicShareAbsoluteUrl(token, originFrom(req)),
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "开启失败" },
+      { error: "开启失败，请稍后重试。" },
       { status: 500 },
     );
   }
@@ -97,9 +97,9 @@ export async function DELETE(
     if ("error" in gate) return gate.error;
     await disablePublicShare(id);
     return NextResponse.json({ enabled: false, path: null, url: null });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "关闭失败" },
+      { error: "关闭失败，请稍后重试。" },
       { status: 500 },
     );
   }

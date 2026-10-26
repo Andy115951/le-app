@@ -45,8 +45,8 @@ export async function GET(req: Request) {
     await mergeAnonymousReadings(user.id, anon);
     const dest = safeNextPath(consumed.next, "/history");
     return NextResponse.redirect(new URL(dest, base));
-  } catch (e) {
-    console.error("[oauth/callback]", e);
+  } catch {
+    console.error("[oauth/callback] Authentication failed");
     return fail(base);
   }
 }

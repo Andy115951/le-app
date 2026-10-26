@@ -389,8 +389,8 @@ export async function runBeginnerReadingPolish(input, options = {}) {
     );
     payloadObject = parseDeepSeekResponse(payload);
     validation = validateBeginnerReadingInterpretation(template, payloadObject, facts);
-  } catch (error) {
-    validation = { valid: false, errors: [String(error?.message || "gateway_request_failed").slice(0, 80)], paragraphs: [] };
+  } catch {
+    validation = { valid: false, errors: ["gateway_request_failed"], paragraphs: [] };
   }
   const accepted = validation.valid;
   const interpretation = accepted ? {

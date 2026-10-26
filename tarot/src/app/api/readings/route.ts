@@ -75,9 +75,9 @@ export async function POST(req: Request) {
     });
     await bumpUsage(subject, "reading");
     return NextResponse.json({ reading });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "创建失败" },
+      { error: "创建失败，请稍后重试。" },
       { status: 500 },
     );
   }

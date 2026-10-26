@@ -68,7 +68,7 @@ function getDeepSeekResearchReadiness(env = process.env) {
 }
 
 function safeErrorMessage(error) {
-  return String(error?.message || error || "Model request failed").replace(/[\r\n]+/g, " ").slice(0, 180);
+  return classifyDeepSeekFailure(error);
 }
 
 function classifyDeepSeekFailure(error) {

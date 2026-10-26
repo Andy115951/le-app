@@ -1,5 +1,7 @@
 "use client";
 
+import { isQuotaExhausted, QUOTA_UNAVAILABLE_MESSAGE } from "@/lib/quota-state";
+
 import { useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -74,6 +76,7 @@ export function NewReadingForm({
 function DraftReadingForm({ initialSceneId }: { initialSceneId?: string }) {
   const router = useRouter();
   const quotaState = useQuota();
+  const quotaUnavailable = quotaState.loading || Boolean(quotaState.error);
   const [initial] = useState(() => {
     const saved = readReadingDraft();
     const explicitScene = ALL.find((s) => s.id === initialSceneId);
@@ -123,16 +126,22 @@ function DraftReadingForm({ initialSceneId }: { initialSceneId?: string }) {
   }
 
   const readingsExhausted =
-    !quotaState.loading && quotaState.remaining.readings <= 0;
+    isQuotaExhausted(quotaState, "readings");
   const submitLabel = loading
     ? "起卦中…"
-    : readingsExhausted
-      ? "今日额度已用尽"
-      : `开始${spreadLabel(spread)}占卜`;
+    : quotaState.error
+      ? "额度暂不可用"
+      : readingsExhausted
+        ? "今日额度已用尽"
+        : `开始${spreadLabel(spread)}占卜`;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (loading) return;
+    if (loading || quotaState.loading) return;
+    if (quotaState.error) {
+      setError(QUOTA_UNAVAILABLE_MESSAGE);
+      return;
+    }
     const q = question.trim();
     if (q.length < 4) {
       setError("请写下至少 4 个字，再把问题交给烛火。");
@@ -189,6 +198,8 @@ function DraftReadingForm({ initialSceneId }: { initialSceneId?: string }) {
       >
       <QuotaHint
         loading={quotaState.loading}
+        error={quotaState.error}
+        onRetry={() => void quotaState.refresh()}
         user={quotaState.user}
         usage={quotaState.usage}
         quota={quotaState.quota}
@@ -408,7 +419,7 @@ function DraftReadingForm({ initialSceneId }: { initialSceneId?: string }) {
         <Button
           type="submit"
           size="lg"
-          disabled={loading || readingsExhausted}
+          disabled={loading || quotaUnavailable || readingsExhausted}
           className="w-full sm:w-auto"
         >
           {submitLabel}
@@ -420,7 +431,7 @@ function DraftReadingForm({ initialSceneId }: { initialSceneId?: string }) {
           <Button
             type="submit"
             size="lg"
-            disabled={loading || readingsExhausted}
+            disabled={loading || quotaUnavailable || readingsExhausted}
             className="mx-auto flex w-full max-w-3xl"
           >
             {submitLabel}

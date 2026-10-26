@@ -1,3 +1,5 @@
+import "server-only";
+
 import { deepseekAI } from "@/lib/ai/deepseek";
 import { mockAI } from "@/lib/ai/mock";
 import type {
@@ -13,24 +15,24 @@ function withMockFallback(primary: TarotAI, label: string): TarotAI {
     async interpret(input: InterpretInput) {
       try {
         return await primary.interpret(input);
-      } catch (err) {
-        console.error(`[ai] ${label} interpret failed; falling back to mock`, err);
+      } catch {
+        console.error(`[ai] ${label} interpret failed; falling back to mock`);
         return mockAI.interpret(input);
       }
     },
     async followUp(input: FollowUpInput) {
       try {
         return await primary.followUp(input);
-      } catch (err) {
-        console.error(`[ai] ${label} followUp failed; falling back to mock`, err);
+      } catch {
+        console.error(`[ai] ${label} followUp failed; falling back to mock`);
         return mockAI.followUp(input);
       }
     },
     async tokenVerse(input: TokenVerseInput) {
       try {
         return await primary.tokenVerse(input);
-      } catch (err) {
-        console.error(`[ai] ${label} tokenVerse failed; falling back to mock`, err);
+      } catch {
+        console.error(`[ai] ${label} tokenVerse failed; falling back to mock`);
         return mockAI.tokenVerse(input);
       }
     },
@@ -43,7 +45,7 @@ function withMockFallback(primary: TarotAI, label: string): TarotAI {
         }
         if (!yielded) yield* mockAI.interpretStream(input, options);
       } catch (err) {
-        console.error(`[ai] ${label} interpretStream failed; falling back to mock`, err);
+        console.error(`[ai] ${label} interpretStream failed; falling back to mock`);
         if (!yielded) yield* mockAI.interpretStream(input, options);
         else throw err;
       }
@@ -57,7 +59,7 @@ function withMockFallback(primary: TarotAI, label: string): TarotAI {
         }
         if (!yielded) yield* mockAI.followUpStream(input, options);
       } catch (err) {
-        console.error(`[ai] ${label} followUpStream failed; falling back to mock`, err);
+        console.error(`[ai] ${label} followUpStream failed; falling back to mock`);
         if (!yielded) yield* mockAI.followUpStream(input, options);
         else throw err;
       }

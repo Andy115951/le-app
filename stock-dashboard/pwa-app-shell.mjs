@@ -5,6 +5,7 @@ export const APP_SHELL = [
   "./app.js",
   "./storage.js",
   "./quotes.js",
+  "./holding-display.mjs",
   "./chart.js",
   "./cloud.js",
   "./personal-observations.mjs",

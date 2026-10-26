@@ -53,6 +53,8 @@ OAuth 是可选项。按启用的登录方式设置：
 npm run test:draft
 npm run test:history
 npm run test:config
+npm run test:quota
+npm run test:privacy
 npm run lint
 npm run build
 ```
@@ -69,9 +71,44 @@ npm run build
 
 发布前在自己的测试环境检查：注册与退出、访客抽牌、解读失败重试、历史分页、分享开启和撤回。只有用户主动开启分享时才应提供分享链接。
 
+## Vercel 环境变量
+
+1. 打开该应用对应的 Vercel 项目，进入 **Settings → Environment Variables**，逐项添加变量名和值。Root Directory 使用 `tarot`；测试账号和占卜之前，先按上文初始化数据库。
+2. 数据库与账号功能需要 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY` 和单独生成的随机 `SESSION_SECRET`，均使用自己后端的配置。
+3. 使用真实模型时，配置以下变量。替换 key 和模型名占位值；如果使用其他服务商，地址改为服务商提供的 HTTPS chat-completions 接口：
+
+```dotenv
+AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=replace-with-your-model-key
+DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
+DEEPSEEK_MODEL=your-supported-model
+```
+
+4. 按用途选择 **Production**（正式站）、**Preview**（预览部署）和 **Development**（Vercel 本地开发）。Preview 和 Development 优先使用独立测试数据库与模型 key；只勾选 Production 的变量不会出现在 Preview。
+5. 保存后创建新部署或重新部署。变量修改不会更新已经构建的部署。启用 OAuth 时，再配置上文列出的可选变量与回调地址。
+
+普通 Next.js 本地开发在首次配置时复制 `.env.example` 为 `.env.local`，填写相同变量名；修改后重启 `npm run dev`。已有本地文件应保留，不用模板覆盖。本地文件由 Git 忽略；Vercel 的变量单独管理，复制仓库不会把变量自动带到新建的 Vercel 项目。
+
+`DEEPSEEK_API_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`SESSION_SECRET` 和 OAuth client secret 只放服务端，不添加 `NEXT_PUBLIC_` 前缀。Vercel 的值输入框只填值，不填整行 `NAME=value`。本文和环境模板只有占位值。
+
+`AI_PROVIDER=mock` 不调用付费模型，但账号和占卜存储仍需 Supabase。公开源码不提供维护者的模型 key，每个部署自行配置；如果公开站配置了真实 key，访客模型调用会消耗该 key 的额度。
+
+Vercel 参考：[环境变量文档](https://vercel.com/docs/environment-variables)。
+
 ## 贡献约定
 
 - 纯逻辑变更优先增加对应草稿、历史或领域规则测试。
 - 数据库变更新增迁移文件，并描述对已有数据的影响。
 - 问题复现与截图使用合成内容，不提交真实问题、对话、会话或环境配置。
 - Next.js 相关实现以当前依赖对应的仓库内文档为准。
+
+## CSS 原生依赖缺失
+
+如果启动时报 Lightning CSS 或 Tailwind 原生模块缺失，可能是可选包下载失败，即使 npm 已返回成功。重新安装可选依赖，并在重启服务前确认模块可以加载：
+
+```sh
+npm install --include=optional
+node -e "require('lightningcss'); require('@tailwindcss/oxide')"
+```
+
+锁文件已包含支持的平台包，不要为所有开发者强制添加某个平台专用的必需依赖。

@@ -1,3 +1,4 @@
+import { publicAuthError } from "@/lib/public-errors";
 import { NextResponse } from "next/server";
 import { ensureAnonymousId, mergeAnonymousReadings, registerUser } from "@/lib/auth/session";
 
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ user });
   } catch (e) {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "注册失败" },
+      { error: publicAuthError(e, "注册暂时失败，请稍后重试。") },
       { status: 400 },
     );
   }

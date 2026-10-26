@@ -10,7 +10,9 @@
     "test:draft": "node --experimental-strip-types --test test/reading-draft.test.mjs",
     "test:history": "node --experimental-strip-types --test test/history.test.mjs",
     "test:config": "node --experimental-strip-types --test test/ai-config.test.mjs",
-    "test:ai:live": "node --env-file=.env.local --import tsx scripts/smoke-deepseek.mts --run-live"
+    "test:ai:live": "node --env-file=.env.local --import tsx scripts/smoke-deepseek.mts --run-live",
+    "test:quota": "node --experimental-strip-types --test test/quota-state.test.mjs",
+    "test:privacy": "node --experimental-strip-types --test test/public-errors.test.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.127",

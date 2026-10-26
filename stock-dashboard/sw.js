@@ -2,7 +2,7 @@ import { isPwaCacheableNavigationResponse, isPwaStaticAsset, shouldBypassPwaCach
 import { APP_SHELL } from "./pwa-app-shell.mjs";
 
 // A new cache adds every app dependency, including new static ESM modules.
-const CACHE_NAME = "nasdaq-intelligence-shell-v3";
+const CACHE_NAME = "nasdaq-intelligence-shell-v4";
 
 async function cacheShell() {
   const cache = await caches.open(CACHE_NAME);

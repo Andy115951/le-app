@@ -257,3 +257,19 @@ test("interpretation request omits noise-only empty sections", async function ()
   assert.equal(user.sections.some(function (section) { return section.id === "leaders"; }), false);
   assert.equal(user.sections.some(function (section) { return section.id === "news_calendar"; }), false);
 });
+
+
+test("model provider failures never expose credentials in public validation errors", async () => {
+  const writes = [];
+  const result = await runBeginnerReadingPolish(baseInput(), {
+    env: enabledEnv(), now: generatedAt, supabaseConfig: { url: "https://db.example", secretKey: "synthetic-database-key" },
+    requestSupabase: async (_config, _path, options) => { writes.push(options.body); return []; },
+    requestModel: async () => { throw new Error("Authorization: Bearer synthetic-private-key"); }
+  });
+  assert.equal(result.status, "rejected");
+  assert.equal(result.validationErrorCount, 1);
+  assert.equal(writes.length, 1);
+  assert.deepEqual(writes[0].validation_errors, ["gateway_request_failed"]);
+  assert.equal(JSON.stringify(writes).includes("synthetic-private-key"), false);
+  assert.equal(JSON.stringify(result).includes("synthetic-private-key"), false);
+});

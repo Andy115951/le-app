@@ -70,9 +70,9 @@ export async function POST(
       reversed: focal.reversed,
       positionLabel: focal.positionLabel,
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "信物生成失败" },
+      { error: "信物生成失败，请稍后重试。" },
       { status: 500 },
     );
   }

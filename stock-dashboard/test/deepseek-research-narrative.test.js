@@ -286,3 +286,21 @@ test("model failure classification is limited to safe replay categories", functi
   assert.equal(classifyDeepSeekFailure(new Error("DeepSeek request failed with status 502")), "gateway_http_error");
   assert.equal(classifyDeepSeekFailure(new Error("sensitive upstream response body")), "gateway_request_failed");
 });
+
+
+test("provider exceptions cannot leak credentials into returned or stored research failures", async () => {
+  let stored;
+  const result = await runDeepSeekResearchNarrative(packet, {
+    config: configured(),
+    getAccepted: async () => null,
+    getAttempts: async () => [],
+    requestModel: async () => { throw new Error("Authorization: Bearer synthetic-private-key"); },
+    persistAudit: async (inputPacket, output, metadata) => {
+      stored = { output, metadata };
+      return { validation: validateResearchNarrative(output, inputPacket), audit: { id: "synthetic-audit" } };
+    }
+  });
+  assert.equal(result.status, "rejected");
+  assert.equal(JSON.stringify(result).includes("synthetic-private-key"), false);
+  assert.equal(JSON.stringify(stored).includes("synthetic-private-key"), false);
+});

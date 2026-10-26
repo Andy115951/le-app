@@ -53,6 +53,8 @@ Register `{OAUTH_BASE_URL}/api/auth/oauth/callback` with each OAuth application.
 npm run test:draft
 npm run test:history
 npm run test:config
+npm run test:quota
+npm run test:privacy
 npm run lint
 npm run build
 ```
@@ -69,9 +71,44 @@ Create your own Vercel application, set Root Directory to `tarot`, and use the N
 
 Before release, check registration and logout, guest readings, interpretation retry, history pagination, and enabling and revoking shares in your own test environment. Provide a sharing link only after the user enables sharing.
 
+## Vercel environment variables
+
+1. Open the Vercel project for this app. In **Settings → Environment Variables**, add each variable name and value separately. Use Root Directory `tarot` and apply the database migrations described above before testing accounts or readings.
+2. For the database and account features, configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a separate random `SESSION_SECRET`. These values belong to your own backend.
+3. To use a live model, set the following values. Replace the key and model placeholders; use the HTTPS chat-completions endpoint supplied by your provider if it differs from the example:
+
+```dotenv
+AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=replace-with-your-model-key
+DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
+DEEPSEEK_MODEL=your-supported-model
+```
+
+4. Choose **Production** for the live site, **Preview** for preview deployments, and **Development** for Vercel local development as needed. Prefer a separate test database and model key for Preview and Development. A variable selected only for Production is not available in Preview.
+5. Save the variables and create a new deployment or redeploy. Changes do not update an already built deployment. If using OAuth, also configure the optional values and callback URLs listed above.
+
+For ordinary local Next.js development, copy `.env.example` to `.env.local` on first setup, fill in the same variable names, and restart `npm run dev` after changing them. Keep an existing local file rather than replacing it with the template. Local files are ignored by Git; values saved in Vercel are managed separately and are not copied into a new Vercel project when you copy this repository.
+
+Keep `DEEPSEEK_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SESSION_SECRET`, and OAuth client secrets server-only, without a `NEXT_PUBLIC_` prefix. In Vercel, enter values in the value field, not a whole `NAME=value` line. This guide and the example file contain placeholders only.
+
+With `AI_PROVIDER=mock`, no paid model is called, but account and reading storage still needs Supabase. The public source does not include the maintainer's model key; each deployment supplies its own. If you configure a live key for a public site, visitors' model calls use that key's allowance.
+
+Vercel reference: [Environment variables](https://vercel.com/docs/environment-variables).
+
 ## Contributing
 
 - Add relevant draft, history, or domain tests for changes to pure logic.
 - Add a migration for schema changes and describe their effect on existing data.
 - Use synthetic content in reproductions and screenshots. Do not commit real questions, conversations, sessions, or environment configuration.
 - Consult the repository documentation matching the installed Next.js dependency when changing framework-specific code.
+
+## Missing native CSS dependencies
+
+If startup reports a missing Lightning CSS or Tailwind native module, an optional package download may have failed even when npm returned success. Retry the optional installation and check the modules before restarting the server:
+
+```sh
+npm install --include=optional
+node -e "require('lightningcss'); require('@tailwindcss/oxide')"
+```
+
+The lockfile already includes supported platform packages; do not add a platform-specific package as a required dependency for all developers.

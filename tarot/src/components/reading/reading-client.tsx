@@ -1,5 +1,7 @@
 "use client";
 
+import { isQuotaExhausted, QUOTA_UNAVAILABLE_MESSAGE } from "@/lib/quota-state";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { RitualSpeed } from "@/data/scenes";
@@ -154,6 +156,7 @@ export function ReadingClient({
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const interpretationRequested = useRef(false);
   const quotaState = useQuota();
+  const quotaUnavailable = quotaState.loading || Boolean(quotaState.error);
 
   function focusFollowUp() {
     composerRef.current?.scrollIntoView({
@@ -256,12 +259,16 @@ export function ReadingClient({
   async function sendFollowUp(opts?: {
     withSubSpread?: false | "single" | "chain";
   }) {
-    if (sending || interpreting) return;
+    if (sending || interpreting || quotaState.loading) return;
+    if (quotaState.error) {
+      setError(QUOTA_UNAVAILABLE_MESSAGE);
+      return;
+    }
     const subKind = opts?.withSubSpread ?? false;
     const text = draft.trim();
     if (!subKind && !text) return;
     const cost = subKind === "chain" ? 3 : 1;
-    if (!quotaState.loading && quotaState.remaining.messages < cost) {
+    if (isQuotaExhausted(quotaState, "messages", cost)) {
       setQuotaBlocked(true);
       setError(
         subKind === "chain" && quotaState.remaining.messages > 0
@@ -334,9 +341,9 @@ export function ReadingClient({
 
   const speedLabel = SPEED_LABEL[reading.ritualSpeed] ?? reading.ritualSpeed;
   const messagesExhausted =
-    !quotaState.loading && quotaState.remaining.messages <= 0;
+    isQuotaExhausted(quotaState, "messages");
   const chainExhausted =
-    !quotaState.loading && quotaState.remaining.messages < 3;
+    isQuotaExhausted(quotaState, "messages", 3);
 
   return (
     <div className="space-y-6">
@@ -686,6 +693,8 @@ export function ReadingClient({
                 </div>
                 <QuotaHint
                   loading={quotaState.loading}
+                  error={quotaState.error}
+                  onRetry={() => void quotaState.refresh()}
                   user={quotaState.user}
                   usage={quotaState.usage}
                   quota={quotaState.quota}
@@ -712,7 +721,7 @@ export function ReadingClient({
                             .matches;
                         if (!desktop) return;
                         e.preventDefault();
-                        if (sending || interpreting || messagesExhausted) return;
+                        if (sending || interpreting || quotaUnavailable || messagesExhausted) return;
                         void sendFollowUp();
                       }}
                       placeholder={
@@ -725,7 +734,7 @@ export function ReadingClient({
                       rows={2}
                       maxLength={500}
                       className="min-h-24 max-h-60 resize-y scroll-mt-44 overflow-y-auto text-base md:text-sm"
-                      disabled={sending || interpreting || messagesExhausted}
+                      disabled={sending || interpreting || quotaUnavailable || messagesExhausted}
                       aria-label="追问内容"
                     />
                     <div className="flex justify-between gap-2 text-xs text-muted-foreground">
@@ -740,7 +749,7 @@ export function ReadingClient({
                       disabled={
                         sending ||
                         interpreting ||
-                        messagesExhausted ||
+                        quotaUnavailable || messagesExhausted ||
                         !draft.trim()
                       }
                       aria-label="发送追问"
@@ -761,7 +770,7 @@ export function ReadingClient({
                           onClick={() =>
                             void sendFollowUp({ withSubSpread: "single" })
                           }
-                          disabled={sending || interpreting || messagesExhausted}
+                          disabled={sending || interpreting || quotaUnavailable || messagesExhausted}
                           aria-label="抽一张象征牌，消耗一次追问额度，文字可选"
                           title="抽一张象征牌（消耗 1 次追问，文字可选）"
                         >
@@ -773,7 +782,7 @@ export function ReadingClient({
                           onClick={() =>
                             void sendFollowUp({ withSubSpread: "chain" })
                           }
-                          disabled={sending || interpreting || chainExhausted}
+                          disabled={sending || interpreting || quotaUnavailable || chainExhausted}
                           aria-label="抽象征牌链，连抽三张象征牌，消耗三次追问额度，文字可选"
                           title="抽象征牌链（消耗 3 次追问，文字可选）"
                         >

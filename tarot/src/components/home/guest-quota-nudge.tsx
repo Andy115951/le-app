@@ -8,9 +8,16 @@ import { GuestLoginCta } from "@/components/quota/guest-login-cta";
  * Avoids competing with first-visit guide while quota is still unused.
  */
 export function GuestQuotaNudge() {
-  const { user, remaining, loading, oauth } = useQuota();
+  const { user, remaining, loading, oauth, error, refresh } = useQuota();
 
-  if (loading || user) return null;
+  if (loading) return null;
+  if (error) return (
+    <p className="text-center text-sm text-muted-foreground" role="status">
+      额度服务暂不可用，请稍后重试。{" "}
+      <button type="button" className="underline" onClick={() => void refresh()}>重试额度</button>
+    </p>
+  );
+  if (user) return null;
   if (remaining.readings > 0) return null;
 
   return (

@@ -6,6 +6,8 @@ import { GuestLoginCta } from "@/components/quota/guest-login-cta";
 
 type Props = {
   loading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   user: { username: string } | null;
   usage: QuotaBucket;
   quota: QuotaBucket;
@@ -18,6 +20,8 @@ type Props = {
 
 export function QuotaHint({
   loading,
+  error,
+  onRetry,
   user,
   usage,
   quota,
@@ -35,6 +39,13 @@ export function QuotaHint({
       </p>
     );
   }
+
+  if (error) return (
+    <div className={`space-y-1 text-xs text-muted-foreground ${className}`} role="status">
+      <p>暂时无法读取额度，请稍后重试。</p>
+      {onRetry ? <button type="button" className="underline" onClick={onRetry}>重试额度</button> : null}
+    </div>
+  );
 
   const readingsLow = remaining.readings <= 1;
   const messagesLow = remaining.messages <= 1;

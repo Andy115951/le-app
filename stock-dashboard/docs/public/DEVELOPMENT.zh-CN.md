@@ -83,9 +83,38 @@ npm test
 
 部署前先运行本地测试，再分别验证公共行情、个人云同步和受控采集接口。部署代码本身不等于历史已经回填或候选已经导入。
 
+## Vercel 环境变量
+
+1. 打开该应用对应的 Vercel 项目，Root Directory 使用 `stock-dashboard`，进入 **Settings → Environment Variables**。只添加实际启用功能所需的变量。
+2. 基础公开行情、缺失行情回退和公开新闻不需要个人 API key。浏览器云同步在页面填写自己的 Supabase URL 与公开 anon key，不要在该表单填数据库管理密钥。
+3. 数据库历史、日历和研究功能先按上文初始化表结构，再在服务端设置 `SUPABASE_URL` 和 `SUPABASE_SECRET_KEY`。定时采集与受控维护接口另配独立随机 `CRON_SECRET`；`FRED_API_KEY` 和 `SEC_USER_AGENT` 只在使用对应可选采集器时配置。
+4. 启用页面的可选模型解读时，配置以下变量。替换 key 和模型名占位值；如果使用其他服务商，改为其 HTTPS chat-completions 接口。该功能还需要已配置的数据库来保存审计记录：
+
+```dotenv
+DEEPSEEK_API_KEY=replace-with-your-model-key
+DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
+DEEPSEEK_MODEL=your-supported-model
+DEEPSEEK_BEGINNER_READING_ENABLED=true
+```
+
+5. 研究叙事和网关检查有独立开关，无意启用时继续关闭，页面解读开关不会自动启用它们。研究请求上限及数据出站开关见上文的功能开关说明。
+6. 按用途选择 **Production**、**Preview** 和 **Development**，尽量使用独立测试资源；只勾选 Production 的变量不会出现在 Preview。保存后部署或重新部署，使新值生效。
+
+本地配置放在被 Git 忽略的 `.env.local`，或通过 shell / Vercel Development 环境提供。模板列出所需变量名，已有本地文件应保留，不要直接覆盖。复制仓库不会把 Vercel 项目变量及绑定自动带到新部署项目。
+
+模型 key、`SUPABASE_SECRET_KEY` 和 `CRON_SECRET` 只能放服务端，不添加 `NEXT_PUBLIC_`、`EXPO_PUBLIC_` 或 `VITE_` 前缀。控制台分别填写变量名和值，不要把整行 `NAME=value` 粘到值输入框。公开站配置了你的模型 key 后，用户请求已开启的解读功能会消耗你的模型额度。
+
+Vercel 参考：[环境变量文档](https://vercel.com/docs/environment-variables)。
+
 ## 贡献约定
 
 - 为规则变化增加能区分新旧行为的测试，注明市场日期与时区。
 - 保留新闻、财报和成分信息的来源，避免用采集时间冒充发布时间。
 - 不在测试、截图或导出里使用真实持仓、邮箱、个人日志或密钥。
 - 新增客户端模块时更新相关 PWA 壳缓存与测试。
+
+## 行情可用性
+
+浏览器直接请求公开 Eastmoney 行情和趋势，不需要个人 key。缺失美股行情会回退到 `/api/global-stock/quote`，由只读服务端处理器请求公开 Yahoo 图表数据。两条链路都设置超时，回退处理器会校验代码并仅返回行情字段。在 Vercel 部署静态页面时需保留该处理器，纯静态预览不能执行回退接口。
+
+仍缺失的标的会标注为部分结果，不用零价格替代。PWA 发布修改客户端模块时，需要同时更新缓存清单和版本。

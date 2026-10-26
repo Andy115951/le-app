@@ -1,5 +1,6 @@
 import { loadState, saveState, upsertItem, removeItem, collectGroups } from "./storage.js";
-import { fetchQuotes } from "./quotes.js";
+import { fetchQuotes, missingQuoteSymbols } from "./quotes.js";
+import { hasHoldingValue } from "./holding-display.mjs";
 import { renderSparkline, renderTrendChart } from "./chart.js";
 import { buildPersonalObservations, mergePersonalObservations } from "./personal-observations.mjs";
 import { createDecisionLog, deleteDecisionLog, getActiveDecisionLogs, mergeDecisionLogs, needsDecisionLogWriteBack, normalizeDecisionLogs, applyOutcome, DECISION_LOG_ACTIONS, DECISION_LOG_OUTCOMES } from "./decision-logs.mjs";
@@ -1480,7 +1481,10 @@ async function refreshQuotesInternal(options) {
     refreshed = true;
     state.lastSuccessAt = new Date();
     updateLastUpdated(state.lastSuccessAt);
-    setStatus("positive", options.trigger === "auto" ? "自动刷新成功" : "刷新成功");
+    const missing = missingQuoteSymbols(quoteSymbols, state.quotes);
+    setStatus(missing.length ? "neutral" : "positive", missing.length
+      ? "部分行情缺失：" + missing.join("、")
+      : options.trigger === "auto" ? "自动刷新成功" : "刷新成功");
   } catch (error) {
     console.error(error);
     setStatus("negative", error && error.message ? error.message : "刷新行情失败，请稍后重试。");
@@ -3570,11 +3574,11 @@ function renderHoldingMeta(item, quote) {
     '<span class="holding-pill ' + escapeHtml(item.holdingType || "watchlist") + '">' + escapeHtml(describeHoldingType(item.holdingType)) + "</span>"
   ];
 
-  if (Number.isFinite(Number(item?.costBasis))) {
+  if (hasHoldingValue(item?.costBasis)) {
     segments.push('<span class="holding-meta-text">成本 ' + escapeHtml(formatMoney(item.costBasis)) + "</span>");
   }
 
-  if (Number.isFinite(Number(item?.shares))) {
+  if (hasHoldingValue(item?.shares)) {
     segments.push('<span class="holding-meta-text">股数 ' + escapeHtml(formatShareCount(item.shares)) + "</span>");
   }
 

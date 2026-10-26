@@ -36,6 +36,7 @@ function getPriceScale(secid, market) {
 }
 
 function parseScaledNumber(value, scale) {
+  if (value === null || value === undefined || String(value).trim() === "") return null;
   const num = Number(value);
   if (!Number.isFinite(num)) return null;
   return Number((num / scale).toFixed(3));
@@ -67,9 +68,8 @@ function buildTrendUrl(secid) {
 
 async function fetchJson(url) {
   const response = await fetch(url, {
-    headers: {
-      Accept: "application/json"
-    }
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(8000)
   });
 
   if (!response.ok) {
@@ -146,9 +146,14 @@ export async function fetchQuotes(symbols) {
     return {};
   }
 
-  const quotePayload = await fetchJson(buildQuoteUrl(entries.map(function (entry) {
-    return entry.secid;
-  })));
+  let quotePayload = null;
+  try {
+    quotePayload = await fetchJson(buildQuoteUrl(entries.map(function (entry) {
+      return entry.secid;
+    })));
+  } catch {
+    // Keep missing quotes empty and try the independent, keyless server source.
+  }
 
   const quotes = {};
   for (const entry of entries) {
@@ -199,5 +204,23 @@ export async function fetchQuotes(symbols) {
     quotes[entry.symbol] = current;
   });
 
+  await Promise.all(missingQuoteSymbols(entries.map(entry => entry.symbol), quotes).map(async function (symbol) {
+    if (!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)) return;
+    try {
+      const payload = await fetchJson("./api/global-stock/quote?symbol=" + encodeURIComponent(symbol));
+      const quote = payload?.quote;
+      if (quote?.symbol !== symbol || !Number.isFinite(quote.price) || quote.price <= 0) return;
+      quotes[symbol] = quote;
+    } catch {
+      // Never fabricate a price or turn an unavailable quote into zero.
+    }
+  }));
   return quotes;
+}
+
+export function missingQuoteSymbols(symbols, quotes) {
+  return symbols.filter(function (symbol) {
+    const value = quotes[symbol]?.price;
+    return !Number.isFinite(value) || value <= 0;
+  });
 }
