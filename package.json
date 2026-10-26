@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "vercel": "^54.18.7"
+  },
+  "license": "MIT",
+  "name": "le-app",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  }
+}

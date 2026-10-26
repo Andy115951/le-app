@@ -1,0 +1,7 @@
+{
+  "id": "cucumber",
+  "image": "/images/foods/cucumber.webp",
+  "method": "Built-in image_gen tool; resized and compressed locally to WebP",
+  "generatedAt": "2026-10-19",
+  "prompt": "Use case: product-mockup. Asset type: square food catalog image for a Chinese blood glucose journal website. Style: refined realistic editorial food photography with softly tactile natural textures, NOT a cartoon, NOT emoji, NOT plastic 3D. Composition: one centered food subject on a seamless warm off-white background (#f4f5ef), generous clear margin 18% around the food, entire subject visible, slightly elevated three-quarter camera angle. Lighting: soft diffuse daylight from upper left, gentle small contact shadow, low contrast, calm clean mood. Natural muted colors, highly recognizable food texture. No extra props, no tablecloth, no utensils, no hands, no people, no text, no labels, no watermark, no logos. Square image. Subject: One fresh dark green CUCUMBER with three round cut slices in front showing pale green watery centers. Only cucumber."
+}

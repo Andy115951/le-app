@@ -1,0 +1,104 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+const {
+  buildDailyResearchPacket,
+  isAvailableByMarketClose,
+  isAvailableDuringResearchSession
+} = require("../lib/daily-research-packet");
+
+const date = "2026-08-11";
+
+function event(key, availableAt) {
+  return {
+    event_key: key,
+    event_type: "sec_filing",
+    title: key,
+    summary: "Official filing.",
+    event_time: availableAt,
+    available_at: availableAt,
+    captured_at: "2026-08-12T00:00:00.000Z",
+    impact_scope: "instrument",
+    impact_level: "medium",
+    confidence: 0.95,
+    tickers: ["NVDA"],
+    themes: ["sec_filing"],
+    sources: [{
+      provider: "SEC EDGAR",
+      title: "NVDA 8-K filing",
+      canonical_url: "https://www.sec.gov/Archives/example.htm",
+      source_kind: "filing",
+      published_at: availableAt,
+      available_at: availableAt,
+      relationType: "primary"
+    }]
+  };
+}
+
+test("daily research packet excludes labels and events learned after New York close", function () {
+  const beforeClose = event("before-close", "2026-08-11T19:59:00.000Z");
+  const afterClose = event("after-close", "2026-08-11T20:01:00.000Z");
+  const packet = buildDailyResearchPacket({
+    date,
+    generatedAt: "2026-08-12T00:00:00.000Z",
+    detail: {
+      day: {
+        qqq: { adjustedClose: 600, changePercent: 0.5, trailingVolatility20dPercent: 18, volatilityLevel: "normal" },
+        eventSummary: { count: 2, highestImpact: "medium", types: ["sec_filing"], symbols: ["NVDA"] },
+        researchOutcome: { return20dPercent: 12 }
+      },
+      events: [beforeClose, afterClose],
+      ndxSnapshot: { effectiveDate: "2026-05-01", sourceUrl: "https://example.com/ndx", constituentCount: 101, totalWeightPercent: 99.96, topMembers: [] }
+    },
+    similar: {
+      methodVersion: "qqq-price-state-v1",
+      target: { feature_version: "qqq-daily-state-v1" },
+      summary: { candidateCount: 1 },
+      matches: [{ rank: 1, candidate_market_date: "2024-01-01", similarity_score: 80, candidate_return_20d_percent: 2 }]
+    }
+  });
+  assert.equal(packet.events.length, 1);
+  assert.equal(packet.events[0].eventKey, "before-close");
+  assert.equal(packet.marketState.eventSummary.count, 1);
+  assert.equal(packet.marketState.adjustedClose, 600);
+  assert.equal(packet.historicalSimilarity.matches[0].historicalOutcome.return20dPercent, 2);
+  assert.equal("researchOutcome" in packet, false);
+  assert.match(packet.asOf.excluded.join(" "), /forward returns/);
+});
+
+test("daily research packet uses the daylight-safe New York close cutoff", function () {
+  assert.equal(isAvailableByMarketClose({ available_at: "2026-01-12T21:00:00.000Z" }, "2026-01-12"), true);
+  assert.equal(isAvailableByMarketClose({ available_at: "2026-01-12T21:01:00.000Z" }, "2026-01-12"), false);
+  assert.equal(isAvailableByMarketClose({ available_at: "2026-07-13T20:00:00.000Z" }, "2026-07-13"), true);
+  assert.equal(isAvailableByMarketClose({ available_at: "2026-07-13T20:01:00.000Z" }, "2026-07-13"), false);
+});
+
+test("daily research packet carries post-close evidence into the next research session without future leakage", function () {
+  const afterPriorClose = event("after-prior-close", "2026-08-10T20:05:00.000Z");
+  const beforeTargetClose = event("before-target-close", "2026-08-11T19:59:00.000Z");
+  const afterTargetClose = event("after-target-close", "2026-08-11T20:01:00.000Z");
+  const packet = buildDailyResearchPacket({
+    date,
+    previousMarketDate: "2026-08-10",
+    detail: { day: { qqq: { adjustedClose: 600 } }, ndxSnapshot: null },
+    sessionEvents: [afterPriorClose, beforeTargetClose, afterTargetClose],
+    similar: { matches: [] }
+  });
+  assert.deepEqual(packet.events.map(function (item) { return item.eventKey; }), ["after-prior-close", "before-target-close"]);
+  assert.equal(packet.asOf.previousMarketDate, "2026-08-10");
+  assert.equal(isAvailableDuringResearchSession(afterPriorClose, "2026-08-10", date), true);
+  assert.equal(isAvailableDuringResearchSession(afterTargetClose, "2026-08-10", date), false);
+});
+
+test("daily research packet excludes events explicitly rejected by append-only review", function () {
+  const accepted = { ...event("accepted-evidence", "2026-08-11T19:00:00.000Z"), review: { status: "accepted" } };
+  const rejected = { ...event("rejected-evidence", "2026-08-11T19:01:00.000Z"), review: { status: "rejected" } };
+  const packet = buildDailyResearchPacket({
+    date,
+    detail: { day: { qqq: { adjustedClose: 600 } }, ndxSnapshot: null },
+    sessionEvents: [accepted, rejected],
+    similar: { matches: [] }
+  });
+  assert.deepEqual(packet.events.map(function (item) { return item.eventKey; }), ["accepted-evidence"]);
+  assert.equal(packet.events[0].review.status, "accepted");
+  assert.match(packet.asOf.excluded.join(" "), /rejected by an append-only human review/);
+});

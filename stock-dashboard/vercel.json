@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/beginner-reading/polish.js": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/capture-market-history",
+      "schedule": "0 22 * * 1-5"
+    }
+  ]
+}

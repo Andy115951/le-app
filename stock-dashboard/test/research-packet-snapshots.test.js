@@ -1,0 +1,139 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+const {
+  RESEARCH_PACKET_SNAPSHOT_VERSION,
+  buildResearchPacketSnapshot,
+  buildSourceSummary,
+  findResearchPacketSnapshotByFingerprint,
+  getResearchPacketSnapshots,
+  normalizePacketFingerprint,
+  persistResearchPacketSnapshot,
+  rehashResearchPacketSnapshots,
+  researchPacketFingerprint
+} = require("../lib/research-packet-snapshots");
+
+function packet(generatedAt) {
+  return {
+    contractVersion: "daily-research-packet-v1",
+    generatedAt,
+    asOf: { marketDate: "2026-08-11" },
+    events: [{
+      eventKey: "sec-filing:sample:NVDA",
+      eventType: "sec_filing",
+      review: { status: "accepted", requiresAttention: false },
+      sources: [{ provider: "SEC EDGAR", sourceKind: "filing", url: "https://www.sec.gov/example" }]
+    }, {
+      eventKey: "market-move:2026-08-11:QQQ:v1",
+      eventType: "market_move_attribution",
+      review: { status: null, requiresAttention: true },
+      sources: [{ provider: "Yahoo Finance", sourceKind: "market_data", url: "https://finance.yahoo.com/example" }]
+    }],
+    historicalSimilarity: { candidateCount: 5 },
+    ndxSnapshot: { effectiveDate: "2026-05-01" }
+  };
+}
+
+test("research packet snapshot fingerprints facts rather than generation time", function () {
+  const first = packet("2026-08-11T20:01:00.000Z");
+  const second = packet("2026-08-11T22:01:00.000Z");
+  assert.equal(researchPacketFingerprint(first), researchPacketFingerprint(second));
+  const record = buildResearchPacketSnapshot(first, "2026-08-11T22:02:00.000Z");
+  assert.equal(record.market_date, "2026-08-11");
+  assert.equal(record.packet_fingerprint.length, 64);
+  assert.equal(record.captured_at, "2026-08-11T22:02:00.000Z");
+  assert.equal(record.source_summary.snapshotVersion, RESEARCH_PACKET_SNAPSHOT_VERSION);
+  assert.equal(record.capture_run_id, null);
+  assert.deepEqual(record.source_summary.eventTypes, { sec_filing: 1, market_move_attribution: 1 });
+  assert.deepEqual(record.source_summary.reviewStatuses, { accepted: 1, needs_attention: 1 });
+});
+
+test("research packet fingerprints remain stable when a JSONB round-trip reorders object keys", function () {
+  const original = packet("2026-08-11T20:01:00.000Z");
+  const reordered = {
+    historicalSimilarity: { candidateCount: 5 },
+    events: original.events.map(function (event) {
+      return { sources: event.sources, review: event.review, eventType: event.eventType, eventKey: event.eventKey };
+    }),
+    asOf: { marketDate: "2026-08-11" },
+    generatedAt: "2026-08-11T23:01:00.000Z",
+    contractVersion: "daily-research-packet-v1",
+    ndxSnapshot: { effectiveDate: "2026-05-01" }
+  };
+  assert.equal(researchPacketFingerprint(original), researchPacketFingerprint(reordered));
+});
+
+test("research packet snapshot storage ignores duplicate packet fingerprints and validates optional run linkage", async function () {
+  const calls = [];
+  const result = await persistResearchPacketSnapshot({}, packet("2026-08-11T20:01:00.000Z"), "2026-08-11T22:02:00.000Z", {
+    captureRunId: "123e4567-e89b-12d3-a456-426614174000"
+  }, async function (_config, path, options) {
+    calls.push({ path, options });
+    return [];
+  });
+  assert.equal(result.created, false);
+  assert.match(calls[0].path, /on_conflict=market_date,packet_fingerprint/);
+  assert.equal(calls[0].options.headers.Prefer, "resolution=ignore-duplicates,return=representation");
+  assert.equal(calls[0].options.body.capture_run_id, "123e4567-e89b-12d3-a456-426614174000");
+  assert.throws(function () {
+    buildResearchPacketSnapshot(packet("2026-08-11T20:01:00.000Z"), "2026-08-11T22:02:00.000Z", { captureRunId: "not-a-uuid" });
+  }, /Invalid capture run id/);
+});
+
+test("snapshot listing omits full packet by default and validates requested dates", async function () {
+  const calls = [];
+  const client = async function (_config, path) {
+    calls.push(path);
+    return [{ id: "snapshot-1", market_date: "2026-08-11" }];
+  };
+  const summary = await getResearchPacketSnapshots({ limit: 999 }, {}, client);
+  assert.equal(summary.count, 1);
+  assert.equal(summary.includePacket, false);
+  assert.equal(calls[0].includes("packet,"), false);
+  const replay = await getResearchPacketSnapshots({ date: "2026-08-11", includePacket: true }, {}, client);
+  assert.equal(replay.date, "2026-08-11");
+  assert.equal(replay.includePacket, true);
+  assert.equal(calls[1].includes("packet,"), true);
+  await assert.rejects(function () { return getResearchPacketSnapshots({ date: "not-a-date" }, {}, client); }, /Invalid calendar date/);
+});
+
+test("private lookup retrieves an immutable packet only by its normalized fingerprint", async function () {
+  const fingerprint = "a".repeat(64);
+  const calls = [];
+  const result = await findResearchPacketSnapshotByFingerprint(fingerprint.toUpperCase(), {}, async function (_config, path) {
+    calls.push(path);
+    return [{ id: "snapshot-1", market_date: "2026-08-11", packet_fingerprint: fingerprint, packet: packet("2026-08-11T20:01:00.000Z") }];
+  });
+  assert.equal(result.id, "snapshot-1");
+  assert.match(calls[0], /packet_fingerprint=eq\.a{64}/);
+  assert.match(calls[0], /select=.*packet/);
+  assert.equal(normalizePacketFingerprint(fingerprint.toUpperCase()), fingerprint);
+  assert.throws(function () { normalizePacketFingerprint("not-a-fingerprint"); }, /Invalid research packet fingerprint/);
+});
+
+test("source summary only records aggregate provenance metadata", function () {
+  const summary = buildSourceSummary(packet("2026-08-11T20:01:00.000Z"));
+  assert.equal(summary.eventCount, 2);
+  assert.deepEqual(summary.sourceKinds, { filing: 1, market_data: 1 });
+  assert.deepEqual(summary.providers, { "SEC EDGAR": 1, "Yahoo Finance": 1 });
+  assert.equal(JSON.stringify(summary).includes("https://"), false);
+});
+
+test("snapshot fingerprint migration updates legacy hashes without touching packet content", async function () {
+  const sourcePacket = packet("2026-08-11T20:01:00.000Z");
+  const calls = [];
+  const client = async function (_config, path, options) {
+    calls.push({ path, options });
+    if (!options) return [{
+      id: "snapshot-1",
+      market_date: "2026-08-11",
+      packet_fingerprint: "legacy-hash",
+      packet: sourcePacket
+    }];
+    return null;
+  };
+  const result = await rehashResearchPacketSnapshots({}, client);
+  assert.deepEqual(result, { scanned: 1, updated: 1 });
+  assert.match(calls[1].path, /id=eq\.snapshot-1/);
+  assert.equal(calls[1].options.body.packet_fingerprint, researchPacketFingerprint(sourcePacket));
+  assert.equal("packet" in calls[1].options.body, false);
+});

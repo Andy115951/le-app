@@ -1,0 +1,7 @@
+{
+  "id": "rice-white",
+  "image": "/images/foods/rice-white.webp",
+  "method": "Built-in image_gen tool; resized and compressed locally to WebP",
+  "generatedAt": "2026-10-19",
+  "prompt": "Use case: product-mockup. Asset type: square food catalog image for a Chinese blood glucose journal website. Primary request: one small plain ivory ceramic bowl filled with COOKED WHITE RICE, distinct individual white rice grains, no toppings. Style: refined realistic editorial food photography with a softly tactile natural feel, NOT a cartoon, NOT emoji, NOT plastic 3D. Composition: one centered food subject on a seamless warm off-white background (#f4f5ef), generous clear margin 18% around the food, entire bowl visible, slightly elevated three-quarter camera angle. Lighting: soft diffuse daylight from upper left, gentle small contact shadow, low contrast, calm clean healthy kitchen mood. Natural muted colors, highly recognizable food texture. No extra props, no tablecloth, no utensils, no hands, no people, no text, no labels, no watermark, no logos. The only object is the bowl of plain cooked white rice. Square image."
+}

@@ -1,0 +1,255 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Candle Taro — dark warm candlelight (default) */
+  --background: oklch(0.16 0.02 55);
+  --foreground: oklch(0.93 0.02 85);
+  --card: oklch(0.20 0.025 55);
+  --card-foreground: oklch(0.93 0.02 85);
+  --popover: oklch(0.18 0.02 55);
+  --popover-foreground: oklch(0.93 0.02 85);
+  --primary: oklch(0.78 0.12 75);
+  --primary-foreground: oklch(0.18 0.02 55);
+  --secondary: oklch(0.26 0.03 55);
+  --secondary-foreground: oklch(0.90 0.03 85);
+  --muted: oklch(0.24 0.02 55);
+  --muted-foreground: oklch(0.72 0.03 75);
+  --accent: oklch(0.28 0.04 60);
+  --accent-foreground: oklch(0.92 0.04 85);
+  --destructive: oklch(0.60 0.18 25);
+  --border: oklch(0.35 0.03 60 / 45%);
+  --input: oklch(0.30 0.03 55 / 50%);
+  --ring: oklch(0.72 0.10 75);
+  --chart-1: oklch(0.78 0.12 75);
+  --chart-2: oklch(0.65 0.08 55);
+  --chart-3: oklch(0.55 0.06 40);
+  --chart-4: oklch(0.45 0.04 55);
+  --chart-5: oklch(0.35 0.03 55);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.14 0.02 55);
+  --sidebar-foreground: oklch(0.93 0.02 85);
+  --sidebar-primary: oklch(0.78 0.12 75);
+  --sidebar-primary-foreground: oklch(0.18 0.02 55);
+  --sidebar-accent: oklch(0.24 0.03 55);
+  --sidebar-accent-foreground: oklch(0.93 0.02 85);
+  --sidebar-border: oklch(0.35 0.03 60 / 40%);
+  --sidebar-ring: oklch(0.72 0.10 75);
+}
+
+.dark {
+  --background: oklch(0.16 0.02 55);
+  --foreground: oklch(0.93 0.02 85);
+  --card: oklch(0.20 0.025 55);
+  --card-foreground: oklch(0.93 0.02 85);
+  --popover: oklch(0.18 0.02 55);
+  --popover-foreground: oklch(0.93 0.02 85);
+  --primary: oklch(0.78 0.12 75);
+  --primary-foreground: oklch(0.18 0.02 55);
+  --secondary: oklch(0.26 0.03 55);
+  --secondary-foreground: oklch(0.90 0.03 85);
+  --muted: oklch(0.24 0.02 55);
+  --muted-foreground: oklch(0.72 0.03 75);
+  --accent: oklch(0.28 0.04 60);
+  --accent-foreground: oklch(0.92 0.04 85);
+  --destructive: oklch(0.60 0.18 25);
+  --border: oklch(0.35 0.03 60 / 45%);
+  --input: oklch(0.30 0.03 55 / 50%);
+  --ring: oklch(0.72 0.10 75);
+  --chart-1: oklch(0.78 0.12 75);
+  --chart-2: oklch(0.65 0.08 55);
+  --chart-3: oklch(0.55 0.06 40);
+  --chart-4: oklch(0.45 0.04 55);
+  --chart-5: oklch(0.35 0.03 55);
+  --sidebar: oklch(0.14 0.02 55);
+  --sidebar-foreground: oklch(0.93 0.02 85);
+  --sidebar-primary: oklch(0.78 0.12 75);
+  --sidebar-primary-foreground: oklch(0.18 0.02 55);
+  --sidebar-accent: oklch(0.24 0.03 55);
+  --sidebar-accent-foreground: oklch(0.93 0.02 85);
+  --sidebar-border: oklch(0.35 0.03 60 / 40%);
+  --sidebar-ring: oklch(0.72 0.10 75);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Candle Taro ritual animations (P6) */
+.ritual-glow {
+  background:
+    radial-gradient(ellipse at 50% 0%, oklch(0.78 0.12 75 / 18%), transparent 55%),
+    radial-gradient(ellipse at 50% 100%, oklch(0.55 0.08 40 / 12%), transparent 50%);
+  animation: ritual-glow-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes ritual-glow-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.ritual-panel--breathe {
+  animation: ritual-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes ritual-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.78 0.12 75 / 0%); }
+  50% { box-shadow: 0 0 28px 2px oklch(0.78 0.12 75 / 18%); }
+}
+
+.ritual-panel--shuffle .ritual-deck-card {
+  animation: ritual-shuffle 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes ritual-shuffle {
+  from { transform: translateY(0) rotate(-4deg); }
+  to { transform: translateY(-6px) rotate(4deg); }
+}
+
+.ritual-panel--ask {
+  animation: ritual-ask 1.6s ease-in-out infinite;
+}
+
+@keyframes ritual-ask {
+  0%, 100% { border-color: oklch(0.78 0.12 75 / 20%); }
+  50% { border-color: oklch(0.78 0.12 75 / 55%); }
+}
+
+.tarot-flip {
+  perspective: 900px;
+}
+
+.tarot-flip-inner {
+  position: relative;
+  min-height: 11rem;
+  transform-style: preserve-3d;
+  transition: transform 0.7s ease;
+}
+
+.tarot-flip--revealed .tarot-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.tarot-flip-back,
+.tarot-flip-front {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.tarot-flip-back {
+  position: absolute;
+  inset: 0;
+  min-height: 11rem;
+}
+
+.tarot-card-back {
+  box-shadow: inset 0 0 24px oklch(0.78 0.12 75 / 12%);
+}
+
+.tarot-card-face {
+  isolation: isolate;
+}
+
+.tarot-flip-front {
+  transform: rotateY(180deg);
+}
+
+.tarot-card-face--reversed {
+  box-shadow: inset 0 0 20px oklch(0.6 0.18 25 / 18%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ritual-glow,
+  .ritual-panel--breathe,
+  .ritual-panel--shuffle .ritual-deck-card,
+  .ritual-panel--ask,
+  .tarot-flip-inner {
+    animation: none !important;
+    transition: none !important;
+  }
+  .tarot-flip--revealed .tarot-flip-inner {
+    transform: none;
+  }
+}
+
+/* Skip link — visible on keyboard focus */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  z-index: 100;
+  transform: translateY(-120%);
+  border-radius: 0.5rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+}
+.skip-link:focus {
+  transform: translateY(0.75rem);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}

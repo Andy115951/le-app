@@ -1,0 +1,197 @@
+import { getCard } from "@/data/deck";
+import { chunkText } from "@/lib/ai/chunk";
+import type {
+  FollowUpInput,
+  InterpretInput,
+  StreamOptions,
+  TarotAI,
+  TokenVerseInput,
+} from "@/lib/ai/types";
+import { describeSpread } from "@/lib/ai/prompts";
+import { contentForAI, parseSubSpreadMessage } from "@/lib/sub-card-message";
+
+const DISCLAIMER = "以上解读供娱乐与自我反思，并不构成确定预言。";
+
+function sceneClosing(scene: string): string {
+  switch (scene) {
+    case "love":
+      return "把此刻的情绪轻轻说清楚，往往比急着下结论更靠近彼此。";
+    case "career":
+      return "先分清哪一步真正在你手里，再谈更大的取舍。";
+    case "study":
+      return "卡点说出来以后，通常只需要一个很小、能做完的下一步。";
+    case "social":
+      return "看看互动里你习惯扮演的位置，再决定要不要微调。";
+    case "choice":
+      return "两边都摆到眼前时，身体先倾向的那一侧，值得多听一会儿。";
+    case "body":
+      return "先照顾最明显的那一处紧绷，比一次修好全部更现实。";
+    default:
+      return "把模糊的不安说清楚，会比急着定论更有力量。";
+  }
+}
+
+/** P47: scene-distinct openings in ## 总览 (mouth must be recognizable). */
+function sceneOverview(scene: string, question: string, brief: boolean): string {
+  switch (scene) {
+    case "love":
+      return brief
+        ? `围绕「${question}」，牌面像烛边低语：先听见情绪与张力，再谈远近。`
+        : `关于「${question}」，这一局像烛边私语——**先看见感受，再谈远近**。`;
+    case "career":
+      return brief
+        ? `围绕「${question}」，牌面沉稳摊开路径与取舍：先看清手里那一步。`
+        : `关于「${question}」，这一局沉稳落在桌上——**先分清能走的与暂缓的**。`;
+    case "study":
+      return brief
+        ? `围绕「${question}」，牌面不催：点出卡点，再给一个能做完的一小步。`
+        : `关于「${question}」，这一局像慢光落在卡点上——**鼓励，但不催你一次走完**。`;
+    case "social":
+      return brief
+        ? `围绕「${question}」，牌面偏中性：先看清你站在哪里，再看互动怎么绕。`
+        : `关于「${question}」，这一局冷静对照模式——**位置比对错更值得留意**。`;
+    case "choice":
+      return brief
+        ? `围绕「${question}」，对照已在眼前：短听身体更倾向的一侧即可。`
+        : `关于「${question}」，这一局点到为止——**两边摆开，当下更值得听从的是哪一侧**。`;
+    case "body":
+      return brief
+        ? `围绕「${question}」，牌面偏慢柔：先照顾最需要被看见的那一块。`
+        : `关于「${question}」，这一局像慢烛火——**先照顾边界与呼吸，不制造恐慌**。`;
+    default:
+      return brief
+        ? `围绕「${question}」，牌面更像在请你先看清节奏，再决定伸手的方向。`
+        : `关于「${question}」，这一局像一盏被风吹动的烛火——**晃，但还在**。`;
+  }
+}
+
+async function interpretText(input: InterpretInput): Promise<string> {
+  const lines = describeSpread(input.spreadResult);
+  // At most one memory line; prefer same-question (P41) over related theme (P49).
+  const priorLine = input.priorHint
+    ? "你上次问过类似的问题；这一局仍以眼前牌面为主，只轻轻对照，不复述旧解读。"
+    : input.relatedThemeHint
+      ? "这几天你也在想相近的事；这一局仍看眼前牌面，只轻轻照一下。"
+      : null;
+  const brief = input.detailLevel === "brief";
+  const overview = sceneOverview(input.scene, input.question, brief);
+  if (brief) {
+    return [
+      `## 总览`,
+      priorLine,
+      overview,
+      "",
+      `## 牌意`,
+      lines,
+      "",
+      `## 综合`,
+      sceneClosing(input.scene),
+      "",
+      DISCLAIMER,
+    ]
+      .filter((line): line is string => line != null)
+      .join("\n");
+  }
+  return [
+    `## 总览`,
+    priorLine,
+    overview,
+    "",
+    `## 牌意`,
+    lines,
+    "",
+    `## 综合`,
+    "先承认已经走过的部分，再把注意力收回你真正能移动的一步。",
+    sceneClosing(input.scene),
+    "",
+    `## 建议`,
+    "- 选一个**最小的行动**（或一个明确的暂停）",
+    "- 观察三天，记下身体与情绪的细微变化",
+    "",
+    DISCLAIMER,
+  ]
+    .filter((line): line is string => line != null)
+    .join("\n");
+}
+
+async function followUpText(input: FollowUpInput): Promise<string> {
+  const tip = input.spreadResult.cards[0]
+    ? getCard(input.spreadResult.cards[0].cardId)?.nameZh
+    : null;
+  const anchor = tip ? `尤其是「${tip}」` : "本局牌面";
+  const parsed = parseSubSpreadMessage(input.userMessage);
+  const heard = parsed.kind
+    ? contentForAI(input.userMessage)
+    : parsed.text;
+  let subNote: string | null = null;
+  if (parsed.kind === "chain") {
+    subNote =
+      "我会把这三条象征牌当作短象征链，锚定本轮追问，仍以本局主牌阵为根基——不是新的完整起卦。";
+  } else if (parsed.kind === "single") {
+    subNote =
+      "我会把这张象征牌当作本轮追问的额外锚点，仍以本局主牌阵为根基。";
+  }
+  return [
+    `## 回应`,
+    `我仍以本局（**${anchor}**）为锚来听你说的：`,
+    heard,
+    "",
+    subNote,
+    `## 可能方向`,
+    "- 把问题拆成「我能影响的」与「我只能观察的」",
+    "- 前者试一小步，后者允许暂时只看着",
+    "",
+    sceneClosing(input.scene),
+    "",
+    "若你其实在谈一个全新主题，也可以点「新占卜」再起一卦。",
+  ]
+    .filter((line): line is string => line != null)
+    .join("\n");
+}
+
+
+async function tokenVerseText(input: TokenVerseInput): Promise<string> {
+  const card = getCard(input.cardId);
+  const name = card?.nameZh ?? "此牌";
+  const kw = card?.keywords?.[0] ?? "静默";
+  const pos = input.positionLabel;
+  if (input.reversed) {
+    const lines = [
+      `${name}逆光而立：${kw}被藏起时，更宜先听自己的呼吸。`,
+      `${pos}上，${name}低语——先松开紧握的那只手，再看路怎么转。`,
+      `烛火一晃：${name}提醒你，${kw}不必急着显形。`,
+    ];
+    return lines[Math.abs(hashStr(input.cardId + pos)) % lines.length]!;
+  }
+  const lines = [
+    `${name}低声说：先把${kw}握在掌心，再问风向。`,
+    `烛影里，${name}提醒你——${kw}比急着定论更靠近答案。`,
+    `以${name}为镜：${kw}还在生长，不必催它开花。`,
+    `${pos}处，${name}示意：把脚步放慢半寸，${kw}自会显形。`,
+  ];
+  return lines[Math.abs(hashStr(input.cardId + pos)) % lines.length]!;
+}
+
+function hashStr(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+}
+
+export const mockAI: TarotAI = {
+  async interpret(input) {
+    return interpretText(input);
+  },
+  async followUp(input) {
+    return followUpText(input);
+  },
+  async tokenVerse(input) {
+    return tokenVerseText(input);
+  },
+  async *interpretStream(input, options?: StreamOptions) {
+    yield* chunkText(await interpretText(input), options);
+  },
+  async *followUpStream(input, options?: StreamOptions) {
+    yield* chunkText(await followUpText(input), options);
+  },
+};

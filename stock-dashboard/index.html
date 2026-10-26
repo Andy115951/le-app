@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f4bb6" />
+  <title>Nasdaq 100 Intelligence</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./assets/nasdaq-intelligence-icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./assets/nasdaq-intelligence-icon-180.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="top card">
+      <div>
+        <p class="eyebrow">NASDAQ 100 / MARKET INTELLIGENCE</p>
+        <h1 class="title">Nasdaq 100 Intelligence</h1>
+        <p class="subtitle">追踪纳指环境、核心权重股与关联新闻，先理解市场发生了什么，再处理个人持仓。</p>
+      </div>
+      <div class="top-actions">
+        <div class="status-wrap">
+          <span class="status-dot neutral" id="statusDot"></span>
+          <span class="status-text" id="statusText">等待刷新</span>
+        </div>
+        <div class="timestamp-wrap">
+          <span class="muted">最后更新</span>
+          <strong id="lastUpdated">--</strong>
+        </div>
+        <button type="button" class="btn btn-ghost pwa-install-btn" id="installAppBtn" hidden>安装应用</button>
+        <button type="button" class="btn btn-ghost" id="toggleCloudBtn">设置</button>
+        <button type="button" class="btn btn-primary" id="refreshBtn">刷新行情</button>
+      </div>
+    </header>
+
+    <nav class="command-bar" aria-label="看板导航">
+      <div class="command-links">
+        <button type="button" class="command-link is-active" data-scroll-target="beginnerReadingHome">今日怎么读</button>
+        <button type="button" class="command-link" data-scroll-target="marketOverview">Nasdaq 100</button>
+        <button type="button" class="command-link" data-scroll-target="marketEvents">动态新闻</button>
+        <button type="button" class="command-link" data-scroll-target="personalObservations">观察记录</button>
+        <button type="button" class="command-link" data-scroll-target="decisionLog">决策日志</button>
+        <button type="button" class="command-link" data-scroll-target="marketCalendar">市场日历</button>
+        <button type="button" class="command-link" data-scroll-target="researchReplay">研究回放</button>
+        <button type="button" class="command-link" data-scroll-target="researchQuality">研究覆盖</button>
+        <button type="button" class="command-link" data-scroll-target="dailyResearchReports">每日研究</button>
+        <button type="button" class="command-link" data-scroll-target="weeklyResearchReports">每周汇总</button>
+        <button type="button" class="command-link" data-scroll-target="researchTaskBoard">任务看板</button>
+        <button type="button" class="command-link" data-scroll-target="eventReviewQueue">归因审核</button>
+        <button type="button" class="command-link" data-scroll-target="modelReview">模型复核</button>
+        <button type="button" class="command-link" data-scroll-target="watchlist">个人持仓</button>
+      </div>
+      <div class="command-actions">
+        <button type="button" class="btn btn-ghost" id="toggleToolsBtn">个人规则</button>
+        <button type="button" class="btn btn-primary" id="addStockBtn">+ 添加持仓</button>
+      </div>
+    </nav>
+
+    <section class="card cloud-card utility-card hidden" id="cloudPanel">
+      <div class="cloud-head">
+        <div>
+          <h2>Supabase 云同步</h2>
+          <p class="muted">多设备共用同一账号数据。首次连接会自动把本地数据迁移到云端（仅当云端为空）。</p>
+        </div>
+        <span class="cloud-status muted" id="cloudStatus">未连接云端</span>
+      </div>
+      <div class="cloud-grid">
+        <div class="field">
+          <label for="supabaseUrlInput">Supabase URL</label>
+          <input id="supabaseUrlInput" placeholder="https://xxxx.supabase.co" />
+        </div>
+        <div class="field">
+          <label for="supabaseAnonKeyInput">Supabase Anon Key</label>
+          <input id="supabaseAnonKeyInput" placeholder="eyJhbGciOi..." />
+        </div>
+        <div class="field">
+          <label for="cloudEmailInput">登录邮箱</label>
+          <input id="cloudEmailInput" type="email" placeholder="you@example.com" />
+        </div>
+      </div>
+      <div class="cloud-actions">
+        <button type="button" class="btn btn-ghost" id="saveCloudConfigBtn">保存云配置</button>
+        <button type="button" class="btn btn-primary" id="sendMagicLinkBtn">发送登录链接</button>
+        <button type="button" class="btn btn-ghost" id="loadCloudBtn">从云端拉取</button>
+        <button type="button" class="btn btn-ghost" id="syncCloudBtn">同步到云端</button>
+        <button type="button" class="btn btn-ghost" id="logoutCloudBtn">退出登录</button>
+      </div>
+    </section>
+
+    <section class="card controls" id="watchlistControls">
+      <div class="controls-head">
+        <div>
+          <p class="eyebrow">PERSONAL LAYER</p>
+          <h2>个人自选与持仓</h2>
+          <p class="muted">这是市场雷达之上的个人辅助层，不影响 Nasdaq 主看板的数据刷新。</p>
+        </div>
+        <button type="button" class="btn btn-ghost" id="addStockInlineBtn">添加股票</button>
+      </div>
+
+      <form id="stockForm" class="stock-form hidden">
+        <div class="field">
+          <label for="symbolInput">代码</label>
+          <input id="symbolInput" name="symbol" placeholder="例如 AAPL / 600519 / 300750" maxlength="10" required />
+        </div>
+        <div class="field">
+          <label for="nameInput">名称</label>
+          <input id="nameInput" name="displayName" placeholder="例如 Apple" maxlength="40" />
+        </div>
+        <div class="field">
+          <label for="groupInput">分组</label>
+          <input id="groupInput" name="group" placeholder="例如 科技 / AI" maxlength="20" />
+        </div>
+        <div class="field note-field">
+          <label for="noteInput">备注</label>
+          <input id="noteInput" name="note" placeholder="例如 财报临近，重点跟踪" maxlength="80" />
+        </div>
+        <div class="field">
+          <label for="costBasisInput">成本价</label>
+          <input id="costBasisInput" name="costBasis" type="number" min="0" step="0.01" inputmode="decimal" placeholder="例如 185.50" />
+        </div>
+        <div class="field">
+          <label for="sharesInput">股数</label>
+          <input id="sharesInput" name="shares" type="number" min="0" step="0.0001" inputmode="decimal" placeholder="例如 10" />
+        </div>
+        <div class="field">
+          <label for="holdingTypeInput">持仓类型</label>
+          <select id="holdingTypeInput" name="holdingType">
+            <option value="watchlist">观察仓</option>
+            <option value="core">核心仓</option>
+            <option value="trading">交易仓</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary form-submit">添加股票</button>
+      </form>
+
+      <div class="toolbar">
+        <div class="toolbar-item search-item">
+          <label for="searchInput">搜索</label>
+          <input id="searchInput" placeholder="代码/名称/分组/备注" maxlength="40" />
+        </div>
+        <div class="toolbar-item">
+          <label for="groupFilter">分组筛选</label>
+          <select id="groupFilter"></select>
+        </div>
+        <div class="toolbar-item">
+          <label for="performanceFilter">涨跌筛选</label>
+          <select id="performanceFilter">
+            <option value="all">全部</option>
+            <option value="up">只看上涨</option>
+            <option value="down">只看下跌</option>
+            <option value="flat">只看平盘</option>
+          </select>
+        </div>
+        <div class="toolbar-item">
+          <label for="sortSelect">排序方式</label>
+          <select id="sortSelect">
+            <option value="symbol">代码</option>
+            <option value="displayName">名称</option>
+            <option value="price">最新价</option>
+            <option value="changePercent">涨跌幅</option>
+            <option value="relativeQqq">相对QQQ强弱</option>
+            <option value="drawdownPercent">较峰值回撤</option>
+            <option value="targetDistance">距目标价</option>
+          </select>
+        </div>
+        <div class="toolbar-item direction-item">
+          <label for="sortDirection">排序方向</label>
+          <select id="sortDirection">
+            <option value="desc">降序</option>
+            <option value="asc">升序</option>
+          </select>
+        </div>
+        <div class="toolbar-item">
+          <label for="autoRefreshSelect">自动刷新</label>
+          <select id="autoRefreshSelect">
+            <option value="0">关闭</option>
+            <option value="30">每30秒</option>
+            <option value="60">每1分钟</option>
+            <option value="300">每5分钟</option>
+          </select>
+        </div>
+        <div class="toolbar-item action-item">
+          <button type="button" class="btn btn-ghost" id="notifyToggleBtn">到价提醒：关</button>
+          <button type="button" class="btn btn-ghost" id="clearFiltersBtn">清空筛选</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-grid">
+      <article class="card stat-card">
+        <span class="stat-label">个人标的</span>
+        <strong class="stat-value" id="countStat">0</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="stat-label">个人上涨</span>
+        <strong class="stat-value positive" id="upStat">0</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="stat-label">个人下跌</span>
+        <strong class="stat-value negative" id="downStat">0</strong>
+      </article>
+      <article class="card stat-card">
+        <span class="stat-label">个人平盘</span>
+        <strong class="stat-value neutral" id="flatStat">0</strong>
+      </article>
+    </section>
+
+    <section class="action-queue" id="actionQueue">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">ACTION QUEUE</p>
+          <h2>个人信号</h2>
+        </div>
+        <p class="muted">只列出需要你判断或执行的信号，不等同于买卖建议。</p>
+      </div>
+      <div class="action-queue-list" id="actionQueueBody"></div>
+    </section>
+
+    <section class="personal-observations" id="personalObservations">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">PERSONAL OBSERVATION LOG</p>
+          <h2>自动观察记录</h2>
+        </div>
+        <p class="muted" id="observationsHint">刷新行情后会记录触发条件，供后续复核。</p>
+      </div>
+      <div class="personal-observations-list" id="observationsBody" aria-live="polite"></div>
+    </section>
+
+    <section class="decision-log" id="decisionLog">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DECISION JOURNAL</p>
+          <h2>决策日志</h2>
+        </div>
+        <p class="muted" id="decisionLogHint">记录你在某标的上的实际决定与理由，之后可补录结果复盘；系统不生成买卖建议。</p>
+      </div>
+      <div id="decisionReviewBody" aria-live="polite"></div>
+      <form id="decisionLogForm" class="decision-log-form">
+        <div class="field">
+          <label for="decisionSymbolInput">标的</label>
+          <input id="decisionSymbolInput" name="symbol" placeholder="例如 NVDA" maxlength="10" required />
+        </div>
+        <div class="field">
+          <label for="decisionActionInput">动作</label>
+          <select id="decisionActionInput" name="action" required>
+            <option value="">选择动作</option>
+            <option value="bought">买入</option>
+            <option value="added">加仓</option>
+            <option value="trimmed">减仓</option>
+            <option value="sold">清仓</option>
+            <option value="hold">继续持有</option>
+            <option value="watch">观望</option>
+            <option value="skip">放弃</option>
+          </select>
+        </div>
+        <div class="field decision-rationale-field">
+          <label for="decisionRationaleInput">理由（可留空）</label>
+          <textarea id="decisionRationaleInput" name="rationale" rows="2" maxlength="600" placeholder="例如 回撤到个人纪律位，先减仓一半观察"></textarea>
+        </div>
+        <input type="hidden" id="decisionLinkedInput" name="linkedObservationId" />
+        <button type="submit" class="btn btn-primary form-submit">记录决策</button>
+      </form>
+      <div class="decision-log-list" id="decisionLogBody" aria-live="polite"></div>
+    </section>
+
+    <section class="market-events" id="marketEvents">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">NASDAQ NEWS & DRIVERS</p>
+          <h2>Nasdaq 动态与新闻</h2>
+        </div>
+        <p class="muted" id="marketEventsHint">自动抓取核心成分行情与公开资讯，保留原始来源供你复核。</p>
+      </div>
+      <div class="market-news-feed" id="marketNewsFeed"></div>
+      <div class="market-events-list" id="marketEventsBody"></div>
+    </section>
+
+    <section class="upcoming-earnings" id="upcomingEarnings">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">OFFICIAL EARNINGS CALENDAR</p>
+          <h2>近期官方财报</h2>
+        </div>
+        <div class="earnings-heading-actions">
+          <div class="earnings-mode-tabs" id="upcomingEarningsModes" role="group" aria-label="财报时间范围">
+            <button type="button" class="is-active" data-earnings-mode="upcoming" aria-pressed="true">即将公布</button>
+            <button type="button" data-earnings-mode="reported" aria-pressed="false">最近已公布</button>
+          </div>
+          <p class="muted" id="upcomingEarningsHint">仅显示已人工核对并归档的官方公司事项，不构成业绩预测或交易建议。</p>
+        </div>
+      </div>
+      <div class="upcoming-earnings-list" id="upcomingEarningsBody" aria-live="polite"></div>
+    </section>
+
+    <section class="market-history" id="marketHistory">
+      <div class="section-heading history-heading">
+        <div>
+          <p class="eyebrow">MARKET HISTORY</p>
+          <h2>Nasdaq 日度脉络</h2>
+        </div>
+        <div class="history-range" aria-label="历史范围">
+          <button type="button" class="history-range-btn is-active" data-history-range="30">30 天</button>
+          <button type="button" class="history-range-btn" data-history-range="90">90 天</button>
+          <button type="button" class="history-range-btn" data-history-range="180">180 天</button>
+        </div>
+      </div>
+      <p class="muted" id="marketHistoryHint">按交易日回看核心成分涨跌、QQQ 对照和可复核资讯。</p>
+      <div class="market-history-list" id="marketHistoryBody"></div>
+    </section>
+
+    <section class="market-calendar" id="marketCalendar">
+      <div class="section-heading calendar-heading">
+        <div>
+          <p class="eyebrow">MARKET MEMORY</p>
+          <h2>Nasdaq 动态日历</h2>
+        </div>
+        <div class="calendar-nav" aria-label="月份切换">
+          <button type="button" class="calendar-nav-btn" id="calendarPrevBtn" aria-label="上个月">←</button>
+          <strong id="calendarMonthLabel">--</strong>
+          <button type="button" class="calendar-nav-btn" id="calendarNextBtn" aria-label="下个月">→</button>
+          <button type="button" class="calendar-today-btn" id="calendarTodayBtn">本月</button>
+        </div>
+      </div>
+      <p class="muted calendar-hint" id="calendarHint">日期按美东交易日归属；点击任意日期查看行情、事件证据和事后结果。</p>
+      <div class="calendar-browse-toolbar">
+        <div class="calendar-view-controls" id="calendarViewControls" role="group" aria-label="日历视图">
+          <button type="button" class="is-active" data-calendar-view="month" aria-pressed="true">月历</button>
+          <button type="button" data-calendar-view="week" aria-pressed="false">周视图</button>
+          <button type="button" data-calendar-view="list" aria-pressed="false">事件列表</button>
+        </div>
+        <div class="calendar-list-filters" id="calendarListFilters" role="group" aria-label="事件列表筛选">
+          <button type="button" class="is-active" data-calendar-filter="all" aria-pressed="true">全部日期</button>
+          <button type="button" data-calendar-filter="events" aria-pressed="false">有事件</button>
+          <button type="button" data-calendar-filter="earnings" aria-pressed="false">有财报</button>
+          <button type="button" data-calendar-filter="high-impact" aria-pressed="false">高影响</button>
+          <button type="button" data-calendar-filter="high-confidence" aria-pressed="false">高置信事件</button>
+        </div>
+        <div class="calendar-event-type-filters" id="calendarEventTypeFilters" role="group" aria-label="按事件类型筛选"></div>
+        <div class="calendar-symbol-filters" id="calendarSymbolFilters" role="group" aria-label="按事件涉及标的筛选"></div>
+      </div>
+      <form class="calendar-jump" id="calendarJumpForm">
+        <label for="calendarDateInput">直达市场日期</label>
+        <input id="calendarDateInput" type="date" required />
+        <button type="submit" class="calendar-jump-btn">查看详情</button>
+      </form>
+      <div class="calendar-legend" aria-label="日历图例">
+        <span><i class="legend-dot trading"></i>交易日</span>
+        <span><i class="legend-dot event"></i>有事件</span>
+        <span><i class="legend-dot closed"></i>周末 / 未确认休市</span>
+        <span><i class="legend-dot upcoming"></i>未来日期</span>
+      </div>
+      <div class="calendar-layout">
+        <div class="calendar-panel card">
+          <div class="calendar-weekdays" id="calendarWeekdays" aria-hidden="true">
+            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+        <aside class="calendar-detail card">
+          <div class="beginner-reading-embed" id="calendarBeginnerReading" aria-live="polite"></div>
+          <div id="calendarDetail" aria-live="polite"></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="research-replay" id="researchReplay">
+      <div class="section-heading replay-heading">
+        <div>
+          <p class="eyebrow">RESEARCH REPLAY</p>
+          <h2>研究输入回放</h2>
+        </div>
+        <button type="button" class="btn btn-ghost" id="refreshResearchReplayBtn">刷新快照</button>
+      </div>
+      <p class="muted replay-hint" id="researchReplayHint">读取已归档的市场研究输入。默认只加载摘要，选择后才获取完整回放。</p>
+      <div class="replay-layout">
+        <div class="replay-list card" id="researchReplayList" aria-live="polite"></div>
+        <aside class="replay-detail card" id="researchReplayDetail" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section class="research-health card" id="researchHealth">
+      <div class="section-heading">
+        <div><p class="eyebrow">RESEARCH OPERATIONS</p><h2>研究运行健康</h2></div>
+        <button type="button" class="btn btn-ghost" id="refreshResearchHealthBtn">刷新状态</button>
+      </div>
+      <p class="muted" id="researchHealthHint">读取脱敏运行状态，不包含运维错误正文或个人数据。</p>
+      <div class="research-health-grid" id="researchHealthBody" aria-live="polite"></div>
+    </section>
+
+    <section class="research-quality card" id="researchQuality">
+      <div class="section-heading">
+        <div><p class="eyebrow">RESEARCH COVERAGE</p><h2>研究覆盖面板</h2></div>
+        <button type="button" class="btn btn-ghost" id="refreshResearchQualityBtn">刷新覆盖</button>
+      </div>
+      <p class="muted" id="researchQualityHint">聚合已归档材料、审核积压与运行账本。覆盖数量不代表证据已经完整或正确。</p>
+      <div class="research-quality-body" id="researchQualityBody" aria-live="polite"></div>
+    </section>
+
+    <section class="research-task-board card" id="researchTaskBoard">
+      <div class="section-heading">
+        <div><p class="eyebrow">RESEARCH TASK LEDGER</p><h2>研究任务看板</h2></div>
+        <button type="button" class="btn btn-ghost" id="refreshResearchTasksBtn">刷新任务</button>
+      </div>
+      <p class="muted" id="researchTasksHint">仅显示追加式阶段运行摘要；原始错误、用户数据和密钥不会出现在此处。</p>
+      <div class="research-task-board-body" id="researchTasksBody" aria-live="polite"></div>
+    </section>
+
+    <section class="event-review-queue card" id="eventReviewQueue">
+      <div class="section-heading">
+        <div><p class="eyebrow">ATTRIBUTION REVIEW</p><h2>归因审核队列</h2></div>
+        <button type="button" class="btn btn-ghost" id="refreshEventReviewBtn">刷新队列</button>
+      </div>
+      <p class="muted" id="eventReviewHint">只读展示需要人工核对的市场归因和来源。决定通过本地受控命令写入，不在网页保存身份或权限。</p>
+      <div class="event-review-controls" role="group" aria-label="审核队列筛选">
+        <button type="button" class="event-review-filter is-active" data-event-review-filter="needs_attention">需核对</button>
+        <button type="button" class="event-review-filter" data-event-review-filter="priority">优先核对</button>
+        <button type="button" class="event-review-filter" data-event-review-filter="unreviewed">未审核</button>
+        <button type="button" class="event-review-filter" data-event-review-filter="all">全部</button>
+      </div>
+      <div class="event-review-list" id="eventReviewBody" aria-live="polite"></div>
+      <div class="event-review-pagination" id="eventReviewPagination" aria-label="审核队列分页"></div>
+    </section>
+
+    <section class="daily-reports card" id="dailyResearchReports">
+      <div class="section-heading">
+        <div><p class="eyebrow">DAILY FACT RECAP</p><h2>每日研究事实摘要</h2></div>
+        <button type="button" class="btn btn-ghost" id="refreshDailyReportsBtn">刷新日报</button>
+      </div>
+      <p class="muted" id="dailyReportsHint">日报由已归档研究输入确定性生成，不包含预测、建议或交易指令。</p>
+      <div class="daily-reports-grid" id="dailyReportsBody" aria-live="polite"></div>
+      <div class="report-pagination" id="dailyReportsPagination" hidden>
+        <button type="button" class="btn btn-ghost" id="loadMoreDailyReportsBtn">加载更早日报</button>
+      </div>
+    </section>
+
+    <section class="weekly-reports card" id="weeklyResearchReports">
+      <div class="section-heading">
+        <div><p class="eyebrow">WEEKLY FACT ROLLUP</p><h2>每周研究汇总</h2></div>
+        <button type="button" class="btn btn-ghost" id="refreshWeeklyReportsBtn">刷新周报</button>
+      </div>
+      <p class="muted" id="weeklyReportsHint">按纽约自然周聚合已归档日报；覆盖范围只代表实际归档天数，不对缺失交易日作推断。</p>
+      <div class="weekly-reports-grid" id="weeklyReportsBody" aria-live="polite"></div>
+    </section>
+
+    <section class="model-review" id="modelReview">
+      <div class="section-heading model-review-heading">
+        <div>
+          <p class="eyebrow">MODEL GOVERNANCE</p>
+          <h2>候选模型复核</h2>
+        </div>
+        <button type="button" class="btn btn-ghost" id="refreshModelReviewBtn">刷新复核</button>
+      </div>
+      <p class="muted model-review-hint" id="modelReviewHint">读取冻结回测及固定晋升门槛。通过仅代表可供人工审阅，不会自动生成交易信号。</p>
+      <div class="model-review-card card" id="modelReviewBody" aria-live="polite"></div>
+    </section>
+
+    <section class="overview-grid" id="marketOverview">
+      <article class="card overview-card beginner-reading-card" id="beginnerReadingHome" aria-live="polite"></article>
+      <article class="card overview-card">
+        <div class="overview-head">
+          <div>
+            <p class="eyebrow">Nasdaq Pulse</p>
+            <h2>纳指环境</h2>
+          </div>
+        </div>
+        <div class="overview-body" id="marketPulseBody"></div>
+      </article>
+
+      <article class="card overview-card">
+        <div class="overview-head">
+          <div>
+            <p class="eyebrow">Core Components</p>
+            <h2>核心成分总览</h2>
+          </div>
+        </div>
+        <div class="ndx-snapshot-status" id="ndxSnapshotStatusBody" aria-live="polite"></div>
+        <div class="overview-body" id="mag7SnapshotBody"></div>
+      </article>
+
+      <article class="card overview-card">
+        <div class="overview-head">
+          <div>
+            <p class="eyebrow">Relative Strength</p>
+            <h2>核心成分相对强弱</h2>
+          </div>
+        </div>
+        <div class="overview-body" id="leadersBody"></div>
+      </article>
+
+      <article class="card overview-card current-scenario-card">
+        <div class="overview-head overview-head-with-action">
+          <div>
+            <p class="eyebrow">HISTORICAL ANALOGUES</p>
+            <h2>当前历史情景</h2>
+          </div>
+          <button type="button" class="overview-refresh" id="refreshCurrentScenarioBtn">更新</button>
+        </div>
+        <div class="overview-body" id="currentScenarioBody" aria-live="polite"></div>
+      </article>
+    </section>
+
+    <section class="decision-workspace" id="decisionWorkspace">
+      <article class="card workspace-card">
+        <div class="overview-head">
+          <div>
+            <p class="eyebrow">Portfolio Context</p>
+            <h2>我的持仓上下文</h2>
+          </div>
+        </div>
+        <div class="workspace-body" id="portfolioSnapshotBody"></div>
+      </article>
+
+      <article class="card workspace-card">
+        <div class="overview-head">
+          <div>
+            <p class="eyebrow">Decision Prep</p>
+            <h2>今日决策摘要</h2>
+          </div>
+        </div>
+        <div class="workspace-body" id="decisionWorkspaceBody"></div>
+      </article>
+    </section>
+
+    <section class="card strategy-card tool-card hidden" id="toolsPanel">
+      <details open>
+        <summary>
+          <span><span class="summary-kicker">AUTOMATION</span>规则与提醒</span>
+          <span class="summary-note">展开管理</span>
+        </summary>
+        <div class="tool-section" id="strategyPanel">
+          <div class="strategy-head">
+            <h2>自动回撤止盈规则</h2>
+            <p class="muted" id="strategyHint">规则格式：回撤%:卖出%（逗号分隔）</p>
+          </div>
+          <div class="strategy-form">
+            <div class="field strategy-input-wrap">
+              <label for="strategyRulesInput">规则</label>
+              <input id="strategyRulesInput" placeholder="例如 8:20,12:30,18:50" maxlength="120" />
+            </div>
+            <button type="button" class="btn btn-primary" id="saveStrategyBtn">保存规则</button>
+          </div>
+          <div class="signal-summary" id="signalSummary">当前无触发建议</div>
+          <div class="signal-list" id="signalList"></div>
+        </div>
+
+        <div class="tool-section tool-section-divider" id="alertsPanel">
+          <div class="strategy-head">
+            <h2>下跌提醒播报</h2>
+            <p class="muted" id="broadcastHint">当日跌幅达到阈值时自动语音播报。开启自动刷新后可持续盯盘。</p>
+          </div>
+          <div class="broadcast-form">
+            <label class="broadcast-toggle"><input type="checkbox" id="dropAlertEnabled" /> 开启播报</label>
+            <div class="field broadcast-threshold">
+              <label for="dropThresholdInput">跌幅阈值（%）</label>
+              <input id="dropThresholdInput" type="number" min="0.1" step="0.1" inputmode="decimal" />
+            </div>
+            <label class="broadcast-toggle"><input type="checkbox" id="dropAlertVoice" /> 语音</label>
+            <label class="broadcast-toggle"><input type="checkbox" id="dropAlertSound" /> 提示音</label>
+            <label class="broadcast-toggle"><input type="checkbox" id="dropAlertNotify" /> 桌面通知</label>
+            <button type="button" class="btn btn-ghost" id="testBroadcastBtn">试听</button>
+          </div>
+          <div class="signal-summary" id="dropSummary">当前无下跌触发</div>
+          <div class="signal-list" id="dropList"></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="card list-card" id="watchlist">
+      <div class="list-head">
+        <div>
+          <h2>个人持仓与自选</h2>
+          <p class="muted" id="listHint">用于记录你真正关心的成本、目标价和仓位，不再承担 Nasdaq 主市场数据入口。</p>
+        </div>
+        <div class="page-size-wrap">
+          <label for="pageSizeSelect" class="muted">每页</label>
+          <select id="pageSizeSelect">
+            <option value="10">10 条</option>
+            <option value="20">20 条</option>
+            <option value="50">50 条</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>股票</th>
+              <th>最新价</th>
+              <th>涨跌幅</th>
+              <th>相对 QQQ</th>
+              <th>较峰值回撤</th>
+              <th>建议动作</th>
+              <th>趋势</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="empty-state hidden">
+        还没有自选股，先添加几只常看的股票吧。
+      </div>
+
+      <div class="mobile-list hidden" id="mobileList"></div>
+
+      <div class="pagination" id="pagination">
+        <button type="button" class="btn btn-ghost" id="prevPageBtn">上一页</button>
+        <span class="muted" id="pageInfo">第 1 / 1 页</span>
+        <button type="button" class="btn btn-ghost" id="nextPageBtn">下一页</button>
+      </div>
+    </section>
+
+    <aside class="page-minimap" id="pageMinimap" aria-label="页面章节导航">
+      <button type="button" class="page-minimap-fab" id="pageMinimapFab" aria-expanded="false" aria-controls="pageMinimapPanel" title="章节导航">
+        <span class="page-minimap-fab-label">章节</span>
+        <span class="page-minimap-fab-progress" id="pageMinimapFabProgress" aria-hidden="true">0%</span>
+      </button>
+      <div class="page-minimap-panel" id="pageMinimapPanel">
+        <div class="page-minimap-head">
+          <div>
+            <p class="page-minimap-kicker">PAGE MAP</p>
+            <strong>章节导航</strong>
+          </div>
+          <span class="page-minimap-progress" id="pageMinimapProgress">0%</span>
+        </div>
+        <div class="page-minimap-track-wrap">
+          <div class="page-minimap-viewport" id="pageMinimapViewport" aria-hidden="true"></div>
+          <nav class="page-minimap-track" id="pageMinimapTrack" aria-label="跳转到页面章节"></nav>
+        </div>
+        <p class="page-minimap-hint muted">滚动或点击可快速定位；当前章节会高亮。</p>
+      </div>
+    </aside>
+
+    <div class="detail-overlay hidden" id="detailOverlay"></div>
+  </main>
+
+  <div class="glossary-popover hidden" id="glossaryPopover" role="dialog" aria-modal="false" aria-label="名词解释"></div>
+
+  <template id="rowTemplate">
+    <tr>
+      <td>
+        <div class="stock-cell">
+          <strong class="stock-symbol"></strong>
+          <span class="stock-name"></span>
+          <div class="stock-meta"></div>
+        </div>
+      </td>
+      <td class="price-cell"></td>
+      <td class="percent-cell"></td>
+      <td class="relative-cell"></td>
+      <td class="drawdown-cell"></td>
+      <td class="advice-cell"></td>
+      <td><div class="sparkline"></div></td>
+      <td>
+        <div class="row-actions">
+          <button type="button" class="btn btn-ghost analyze-btn">分析</button>
+          <button type="button" class="btn btn-ghost remove-btn">删除</button>
+        </div>
+      </td>
+    </tr>
+  </template>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

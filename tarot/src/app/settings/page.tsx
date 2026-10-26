@@ -1,0 +1,108 @@
+import Link from "next/link";
+import { ensureAnonymousId, getCurrentUser } from "@/lib/auth/session";
+import { PRODUCT_NAME } from "@/data/scenes";
+import { QUOTAS, getUsage } from "@/lib/store/readings";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { SettingsDefaultsForm } from "@/components/settings/settings-defaults-form";
+
+function providerHint(provider?: string | null) {
+  if (provider === "github") return "GitHub";
+  if (provider === "google") return "Google";
+  if (provider === "password") return "用户名密码";
+  return null;
+}
+
+export default async function SettingsPage() {
+  const user = await getCurrentUser();
+  const anon = await ensureAnonymousId();
+  const subject = user ? `user:${user.id}` : `anon:${anon}`;
+  const usage = await getUsage(subject);
+  const quota = user ? QUOTAS.user : QUOTAS.guest;
+  const how = providerHint(user?.authProvider);
+  const label = user
+    ? user.displayName && user.displayName !== user.username
+      ? `${user.displayName}（${user.username}）`
+      : user.username
+    : null;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">设置</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          账号、默认仪式与解读、今日一牌习惯、今日额度
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">账号</CardTitle>
+          <CardDescription>
+            {user
+              ? `已登录：${label}${how ? ` · ${how}` : ""}`
+              : "当前为访客 · 登录后历史自动合并"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {user ? (
+            <p className="text-sm text-muted-foreground">
+              登录用户每日额度更高；退出可在页眉完成。
+            </p>
+          ) : (
+            <Button asChild>
+              <Link href="/login">登录 / 注册</Link>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <SettingsDefaultsForm />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">今日额度</CardTitle>
+          <CardDescription>
+            新占卜 {usage.readings}/{quota.readings} · 追问 {usage.messages}/
+            {quota.messages}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-1">
+          <p>访客每天 1 次新占卜、约 5 次追问；登录后 10 / 100。</p>
+          <p>新占卜与追问页也会轻声提示今日剩余；将近用尽时用烛光语气提醒，不打断仪式。</p>
+          <p>默认解读档与仪式速度保存在本机，每局仍可临时修改。</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">关于 {PRODUCT_NAME}</CardTitle>
+          <CardDescription>娱乐与自我反思</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            解读由顾问生成，仅供参考，不构成确定预言。牌阵是当下的一面镜子，决定仍在你手里。
+          </p>
+          <p>
+            对外文案用「占卜 / 牌阵 / 解读」；解读完成后可用「分享牌阵」复制摘要、「分享图」或「烛火信物」生成竖版壁纸（均不含账号与内部 id）。
+          </p>
+          <p>
+            可把 Candle Taro 添加到手机主屏幕，以独立窗口打开：iPhone 用 Safari「分享 → 添加到主屏幕」；Android 用浏览器菜单「安装应用 / 添加到主屏幕」。弱网时会缓存首页壳与静态资源，方便再点亮烛火。
+          </p>
+          <p>
+            想养成轻习惯：在上方打开「打开时先看今日一牌」或「主屏打开时轻声提醒」——都可随时关掉，不发系统通知。
+          </p>
+          <p className="text-xs opacity-80">
+            主题切换明显时，顾问可能温和建议点「新占卜」再起一卦，不强制。
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

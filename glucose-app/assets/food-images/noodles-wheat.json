@@ -1,0 +1,7 @@
+{
+  "id": "noodles-wheat",
+  "image": "/images/foods/noodles-wheat.webp",
+  "method": "Built-in image_gen tool; resized and compressed locally to WebP",
+  "generatedAt": "2026-10-19",
+  "prompt": "Use case: product-mockup. Asset: square food catalog image for Chinese blood glucose journal. Refined realistic editorial food photography, softly tactile natural textures, NOT cartoon, emoji, or plastic 3D. One centered food subject on seamless warm off-white #f4f5ef background, generous clear margin 18%, entire subject visible, elevated three-quarter angle, soft diffuse daylight from upper left, gentle contact shadow, natural muted colors, no extra props, utensils, hands, people, text, labels, logos, or watermarks. Bowls and plates where needed are plain ivory ceramic. Single square image. Subject: A plain ivory ceramic bowl of plain cooked Chinese wheat noodles, ivory strands loosely coiled. No broth, toppings, sauce or garnish.\n"
+}

@@ -1,0 +1,33 @@
+{
+  "name": "glucose-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port 3100",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port 3100",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/lib/*.test.ts && npm run test:security && npm run test:config",
+    "test:security": "TSX_TSCONFIG_PATH=src/app/api/_lib/tsconfig.test.json node --import tsx --test src/app/api/_lib/security.test.ts",
+    "test:db": "node scripts/test-database-local.mjs",
+    "deploy:preview": "node --env-file-if-exists=.env.local scripts/deploy.mjs",
+    "deploy:prod": "node --env-file-if-exists=.env.local scripts/deploy.mjs --prod",
+    "test:config": "node --test scripts/configuration.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.116.0",
+    "lucide-react": "1.44.0",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,7 @@
+{
+  "id": "beef",
+  "image": "/images/foods/beef.webp",
+  "method": "Built-in image_gen tool; resized and compressed locally to WebP",
+  "generatedAt": "2026-10-19",
+  "prompt": "Use case: product-mockup.\nAsset type: square food catalog image for a Chinese blood glucose journal.\nStyle: refined realistic editorial food photography, softly tactile natural textures. NOT cartoon, emoji, illustration, or plastic 3D.\nScene/backdrop: seamless warm off-white #f4f5ef surface and background.\nComposition: one centered food subject, generous clear margin 18%, entire subject visible, elevated three-quarter camera angle.\nLighting: soft diffuse daylight from upper left, gentle contact shadow, natural muted colors.\nConstraints: no extra props, utensils, hands, people, text, labels, logos, or watermarks. Bowls and plates, where needed, are plain ivory ceramic. Single square image.\nSubject: One small plain ivory ceramic plate of cooked plain lean beef thin slices, natural brown cooked lean meat, no sauce or garnish.\n"
+}

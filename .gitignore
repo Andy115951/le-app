@@ -1,0 +1,46 @@
+# Dependencies and generated application output
+node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+*.log
+
+# Local environment, cloud bindings, and editor state
+.env*
+!.env.example
+.vercel/
+.claude/
+.codex/
+.idea/
+.DS_Store
+**/supabase/.temp/
+
+# Local records and signing material
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.har
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+
+# Generated native directories and distributables
+**/src-tauri/target/
+**/src-tauri/gen/
+/glucose-mobile/android/
+/glucose-mobile/ios/
+/glucose-mobile/.expo/
+/glucose-mobile/artifacts/
+*.apk
+*.aab
+*.dmg

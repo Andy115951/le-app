@@ -1,0 +1,306 @@
+const { getDailyResearchReports } = require("./daily-research-reports");
+const { getSupabaseConfig, requestSupabase } = require("./supabase-server");
+const { normalizeDate } = require("./market-calendar");
+const { getNyseTradingWeek, NYSE_TRADING_CALENDAR_SOURCE } = require("./nyse-trading-calendar");
+
+const WEEKLY_RESEARCH_REPORT_VERSION = "weekly-research-report-v1";
+const FROZEN_WEEKLY_REPORTS_TABLE = "frozen_weekly_research_reports";
+
+function finite(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function percentageChange(start, end) {
+  if (start === null || end === null || start === 0) return null;
+  return Math.round(((end / start - 1) * 100) * 1000000) / 1000000;
+}
+
+function addCounts(target, values) {
+  Object.entries(values || {}).forEach(function ([key, value]) {
+    const count = finite(value);
+    if (count !== null) target[key] = (target[key] || 0) + count;
+  });
+  return target;
+}
+
+function weekStartForDate(value) {
+  const date = normalizeDate(value);
+  const utc = new Date(date + "T00:00:00Z");
+  const mondayOffset = (utc.getUTCDay() + 6) % 7;
+  utc.setUTCDate(utc.getUTCDate() - mondayOffset);
+  return utc.toISOString().slice(0, 10);
+}
+
+function shiftDate(value, days) {
+  const date = new Date(normalizeDate(value) + "T12:00:00.000Z");
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function expectedBusinessDatesForWeek(weekStart) {
+  return getNyseTradingWeek(weekStart).expectedDates;
+}
+
+function latestDailyReportsByDate(rows, expectedDates) {
+  const allowed = new Set(expectedDates || []);
+  const byDate = new Map();
+  (Array.isArray(rows) ? rows : []).forEach(function (row) {
+    const date = String(row?.market_date || "");
+    if (!allowed.has(date) || !row?.report || typeof row.report !== "object") return;
+    const prior = byDate.get(date);
+    if (!prior || String(row.created_at || "") > String(prior.created_at || "")) byDate.set(date, row);
+  });
+  return byDate;
+}
+
+function assessWeeklyFreezeEligibility(weekStart, rows, asOfDate) {
+  const normalizedWeekStart = weekStartForDate(weekStart);
+  const tradingWeek = getNyseTradingWeek(normalizedWeekStart);
+  const expectedDates = tradingWeek.expectedDates;
+  const completedWeekEnd = expectedDates[expectedDates.length - 1];
+  const asOf = normalizeDate(asOfDate || completedWeekEnd);
+  const reportsByDate = latestDailyReportsByDate(rows, expectedDates);
+  const missingDates = expectedDates.filter(function (date) { return !reportsByDate.has(date); });
+  if (asOf < completedWeekEnd) {
+    return { eligible: false, reason: "week_not_complete", weekStart: normalizedWeekStart, expectedDates, missingDates, tradingWeek };
+  }
+  if (missingDates.length) {
+    return { eligible: false, reason: "incomplete_business_week", weekStart: normalizedWeekStart, expectedDates, missingDates, tradingWeek };
+  }
+  return {
+    eligible: true,
+    reason: null,
+    weekStart: normalizedWeekStart,
+    expectedDates,
+    missingDates: [],
+    tradingWeek,
+    reports: expectedDates.map(function (date) { return reportsByDate.get(date); })
+  };
+}
+
+function buildWeeklyResearchReport(rows) {
+  const reports = (Array.isArray(rows) ? rows : []).filter(function (row) {
+    return row?.report && typeof row.report === "object" && row.market_date;
+  }).slice().sort(function (left, right) {
+    return String(left.market_date).localeCompare(String(right.market_date));
+  });
+  if (!reports.length) throw new Error("At least one daily research report is required");
+
+  const first = reports[0];
+  const last = reports[reports.length - 1];
+  const firstClose = finite(first.report?.market?.adjustedClose);
+  const lastClose = finite(last.report?.market?.adjustedClose);
+  const evidence = { eventCount: 0, similarDayCandidateCount: 0, eventTypes: {}, reviewStatuses: {}, providers: {} };
+  reports.forEach(function (row) {
+    const dailyEvidence = row.report?.evidence || {};
+    evidence.eventCount += finite(dailyEvidence.eventCount) || 0;
+    evidence.similarDayCandidateCount += finite(dailyEvidence.similarDayCandidateCount) || 0;
+    addCounts(evidence.eventTypes, dailyEvidence.eventTypes);
+    addCounts(evidence.reviewStatuses, dailyEvidence.reviewStatuses);
+    addCounts(evidence.providers, dailyEvidence.providers);
+  });
+
+  return {
+    reportVersion: WEEKLY_RESEARCH_REPORT_VERSION,
+    kind: "deterministic_weekly_fact_recap",
+    weekStart: weekStartForDate(first.market_date),
+    observedStart: normalizeDate(first.market_date),
+    observedEnd: normalizeDate(last.market_date),
+    coverage: {
+      archivedDailyReports: reports.length,
+      status: reports.length >= 3 ? "substantial" : "limited"
+    },
+    market: {
+      symbol: last.report?.market?.symbol || "QQQ",
+      observedStartClose: firstClose,
+      observedEndClose: lastClose,
+      observedWindowChangePercent: first.market_date !== last.market_date
+        ? percentageChange(firstClose, lastClose)
+        : null,
+      latestVolatilityLevel: last.report?.market?.volatilityLevel || "unknown"
+    },
+    evidence,
+    limitations: [
+      "Aggregates only immutable daily fact reports already archived for the displayed week.",
+      "Coverage reflects actual archived report dates. Dynamic reports do not infer holidays or missing sessions; frozen reports can only exclude explicitly listed official full-day closures.",
+      "Does not contain a forecast, recommendation, target price, allocation, or trade instruction."
+    ]
+  };
+}
+
+function buildFrozenWeeklyResearchReport(eligibility, frozenAt) {
+  if (!eligibility?.eligible) throw new Error("A complete Monday-to-Friday daily report set is required to freeze a weekly report");
+  const report = buildWeeklyResearchReport(eligibility.reports);
+  return {
+    ...report,
+    coverage: {
+      ...report.coverage,
+      status: "frozen_complete",
+      expectedBusinessDates: eligibility.expectedDates,
+      expectedTradingDates: eligibility.expectedDates,
+      fullClosureDates: eligibility.tradingWeek.fullClosureDates,
+      tradingCalendar: {
+        status: eligibility.tradingWeek.calendarStatus,
+        version: eligibility.tradingWeek.calendarVersion,
+        source: eligibility.tradingWeek.calendarSource
+      }
+    },
+    freeze: {
+      frozenAt: new Date(frozenAt || new Date()).toISOString(),
+      rule: "complete_expected_nyse_trading_days_archived_daily_reports_v1"
+    }
+  };
+}
+
+function freezeCandidateWeekStart(asOfDate) {
+  const asOf = normalizeDate(asOfDate);
+  const currentWeekStart = weekStartForDate(asOf);
+  const currentWeek = getNyseTradingWeek(currentWeekStart);
+  const finalExpectedTradingDate = currentWeek.expectedDates[currentWeek.expectedDates.length - 1];
+  return asOf >= finalExpectedTradingDate ? currentWeekStart : shiftDate(currentWeekStart, -7);
+}
+
+function normalizeWeeklyReportLimit(value) {
+  const limit = Number(value) || 8;
+  return Math.max(1, Math.min(12, Math.round(limit)));
+}
+
+function groupRowsByWeek(rows) {
+  const groups = new Map();
+  (Array.isArray(rows) ? rows : []).forEach(function (row) {
+    if (!row?.market_date) return;
+    const weekStart = weekStartForDate(row.market_date);
+    const group = groups.get(weekStart) || [];
+    group.push(row);
+    groups.set(weekStart, group);
+  });
+  return Array.from(groups.entries()).sort(function ([left], [right]) { return right.localeCompare(left); });
+}
+
+async function getWeeklyResearchReports(options = {}, config, requestImpl) {
+  const limit = normalizeWeeklyReportLimit(options.limit);
+  const effectiveConfig = config || getSupabaseConfig();
+  const request = requestImpl || requestSupabase;
+  const [daily, frozenRows] = await Promise.all([
+    getDailyResearchReports({ limit: 30 }, effectiveConfig, request),
+    request(effectiveConfig, "/rest/v1/" + FROZEN_WEEKLY_REPORTS_TABLE + "?select=week_start,report_version,report,frozen_at,created_at&order=week_start.desc&limit=" + limit)
+  ]);
+  const frozenByWeek = new Map((Array.isArray(frozenRows) ? frozenRows : []).map(function (row) {
+    return [row.week_start, { weekStart: row.week_start, report: row.report, frozenAt: row.frozen_at, archived: true }];
+  }));
+  const dynamic = groupRowsByWeek(daily.reports).map(function ([weekStart, rows]) {
+    return { weekStart, report: buildWeeklyResearchReport(rows), archived: false };
+  });
+  dynamic.forEach(function (row) { if (!frozenByWeek.has(row.weekStart)) frozenByWeek.set(row.weekStart, row); });
+  const reports = Array.from(frozenByWeek.values()).sort(function (left, right) {
+    return String(right.weekStart).localeCompare(String(left.weekStart));
+  }).slice(0, limit);
+  return { reportVersion: WEEKLY_RESEARCH_REPORT_VERSION, count: reports.length, reports };
+}
+
+
+async function ensureWeeklyFreezeMarketDays(tradingWeek, config, requestImpl) {
+  const dates = Array.from(new Set(Array.isArray(tradingWeek?.fullClosureDates) ? tradingWeek.fullClosureDates : []))
+    .filter(Boolean);
+  if (!dates.length) return { upserted: 0 };
+
+  const updatedAt = new Date().toISOString();
+  const source = tradingWeek.calendarSource || NYSE_TRADING_CALENDAR_SOURCE;
+  await requestImpl(config, "/rest/v1/market_days?on_conflict=market_date", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: dates.map(function (marketDate) {
+      return {
+        market_date: marketDate,
+        exchange: "XNAS",
+        is_trading_day: false,
+        session_status: "holiday",
+        source,
+        updated_at: updatedAt
+      };
+    })
+  });
+  return { upserted: dates.length };
+}
+
+function attachWeeklyFreezeDiagnostics(error, diagnostics) {
+  const payload = diagnostics && typeof diagnostics === "object" ? diagnostics : {};
+  if (!error || typeof error !== "object") {
+    const wrapped = new Error(String(error || "Weekly freeze failed"));
+    Object.assign(wrapped, payload);
+    return wrapped;
+  }
+  Object.assign(error, payload);
+  return error;
+}
+
+async function freezeWeeklyResearchReport(options = {}, config = getSupabaseConfig(), requestImpl = requestSupabase) {
+  const asOfDate = normalizeDate(options.asOfDate);
+  const weekStart = options.weekStart ? weekStartForDate(options.weekStart) : freezeCandidateWeekStart(asOfDate);
+  const tradingWeek = getNyseTradingWeek(weekStart);
+  const daily = await getDailyResearchReports({
+    startDate: tradingWeek.weekdayDates[0],
+    endDate: tradingWeek.weekdayDates[tradingWeek.weekdayDates.length - 1],
+    limit: 30
+  }, config, requestImpl);
+  const eligibility = assessWeeklyFreezeEligibility(weekStart, daily.reports, asOfDate);
+  if (!eligibility.eligible) {
+    return {
+      status: "skipped",
+      reason: eligibility.reason,
+      weekStart,
+      expectedBusinessDateCount: eligibility.expectedDates.length,
+      archivedDailyReportCount: eligibility.expectedDates.length - eligibility.missingDates.length,
+      calendarStatus: eligibility.tradingWeek.calendarStatus
+    };
+  }
+  const report = buildFrozenWeeklyResearchReport(eligibility, options.frozenAt);
+  const diagnostics = {
+    weekStart,
+    expectedBusinessDateCount: eligibility.expectedDates.length,
+    archivedDailyReportCount: eligibility.reports.length,
+    calendarStatus: eligibility.tradingWeek.calendarStatus,
+    reason: "freeze_persist_failed"
+  };
+  try {
+    await ensureWeeklyFreezeMarketDays(eligibility.tradingWeek, config, requestImpl);
+    const rows = await requestImpl(config, "/rest/v1/" + FROZEN_WEEKLY_REPORTS_TABLE + "?on_conflict=week_start,report_version", {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
+      body: {
+        week_start: weekStart,
+        report_version: WEEKLY_RESEARCH_REPORT_VERSION,
+        report,
+        frozen_at: report.freeze.frozenAt
+      }
+    });
+    return {
+      status: "succeeded",
+      reason: null,
+      weekStart,
+      expectedBusinessDateCount: eligibility.expectedDates.length,
+      archivedDailyReportCount: eligibility.reports.length,
+      calendarStatus: eligibility.tradingWeek.calendarStatus,
+      created: Array.isArray(rows) && rows.length > 0
+    };
+  } catch (error) {
+    throw attachWeeklyFreezeDiagnostics(error, diagnostics);
+  }
+}
+
+module.exports = {
+  WEEKLY_RESEARCH_REPORT_VERSION,
+  assessWeeklyFreezeEligibility,
+  buildWeeklyResearchReport,
+  buildFrozenWeeklyResearchReport,
+  ensureWeeklyFreezeMarketDays,
+  expectedBusinessDatesForWeek,
+  freezeCandidateWeekStart,
+  freezeWeeklyResearchReport,
+  getWeeklyResearchReports,
+  latestDailyReportsByDate,
+  normalizeWeeklyReportLimit,
+  weekStartForDate
+};
