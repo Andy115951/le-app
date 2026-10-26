@@ -46,11 +46,14 @@ Run from `tarot/`:
 npm run test:draft
 npm run test:history
 npm run test:config
+npm run test:database
 npm run lint
 npm run build
 ```
 
-The current automated tests cover draft recovery and history-query rules. Accounts, streaming model responses, and sharing also need integration checks in your own test environment.
+The current automated tests cover draft recovery, history-query rules, and database access controls in isolated PostgreSQL. Accounts, streaming model responses, and sharing also need integration checks in your own test environment.
+
+All five Tarot database tables must remain server-only, including when sharing a Supabase project with another app. Apply the [required permissions migration](./supabase/migrations/202610260001_private_tarot_tables.sql) after the base schema; server API checks alone do not restrict direct anonymous Data API access. See the developer guide for verification.
 
 ## Project structure
 

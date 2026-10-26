@@ -12,7 +12,8 @@
     "test:config": "node --experimental-strip-types --test test/ai-config.test.mjs",
     "test:ai:live": "node --env-file=.env.local --import tsx scripts/smoke-deepseek.mts --run-live",
     "test:quota": "node --experimental-strip-types --test test/quota-state.test.mjs",
-    "test:privacy": "node --experimental-strip-types --test test/public-errors.test.mjs"
+    "test:privacy": "node --experimental-strip-types --test test/public-errors.test.mjs",
+    "test:database": "node --test test/database-security.test.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.127",
@@ -39,6 +40,7 @@
     "zod": "^4.6.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",

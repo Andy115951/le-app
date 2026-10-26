@@ -30,10 +30,17 @@
 2. [OAuth 用户支持](../../supabase/migrations/20260911170000_oauth_users.sql)。
 3. [静默揭晓](../../supabase/migrations/20260914090000_silent_reveal.sql)。
 4. [公开分享令牌](../../supabase/migrations/20260915100000_public_share_token.sql)。
+5. **必须执行的安全边界：**[Tarot 私有表权限](../../supabase/migrations/202610260001_private_tarot_tables.sql)。
 
 这些文件提供表结构，不包含账号、占卜记录或对话导出。已有数据库应核对已应用的迁移，再执行后续文件。
 
-应用通过服务端管理客户端操作数据库，用户和访客的访问边界由服务端接口检查。新增 API 时需要保留记录归属校验，不能将管理客户端交给浏览器。
+应用通过服务端管理客户端操作数据库，用户和访客的访问边界由服务端接口检查。新增 API 时需要保留记录归属校验，不能将管理客户端交给浏览器。仅靠接口归属检查，无法保护经 Supabase Data API 暴露的数据库表。
+
+5 张 `tarot_*` 表仅供服务端访问：启用 RLS、不提供客户端策略，撤销 `PUBLIC`、`anon`、`authenticated` 的表级和独立列级权限，保留 `service_role` 的增删改查。其他应用的 Supabase 登录身份并不是 Tarot 应用会话。公开分享由服务端按不透明令牌解析，不需要数据库匿名读取权限。
+
+安全迁移使用事务，可以重复执行，不改动用户记录，也不改动其他应用的表、策略、schema 授权或默认权限。即使前 4 个迁移已安装，已有数据库也必须执行这一安全迁移。审阅后通过 SQL Editor 或已认证的管理连接仅执行该文件，不要在共享项目上批量推送无关的待执行迁移。权限修改立即在数据库生效，重新部署前端不能代替修复。
+
+[private-tables.sql](../../supabase/checks/private-tables.sql) 提供纯元数据检查：应有 5 张表启用 RLS，无客户端策略，`anon` / `authenticated` 无表级和列级权限，服务端仍有增删改查权限。迁移前后对比其他应用权限指纹，应保持一致。检查不查询用户记录。
 
 ## 模型与 OAuth
 
@@ -55,11 +62,24 @@ npm run test:history
 npm run test:config
 npm run test:quota
 npm run test:privacy
+npm run test:database
 npm run lint
 npm run build
 ```
 
 草稿测试使用模拟 localStorage，历史测试使用模拟请求，不要求连接真实云项目。配置测试覆盖默认及自定义模型目标，并拒绝携带凭据的地址。
+
+`test:database` 在内存 PostgreSQL 中用虚构数据执行实际迁移，检查匿名及普通登录角色拒绝访问、列级授权、RLS 纵深防护、服务端登录 / 会话 / 历史 / 分享 / 额度访问、重复执行和其他表不受影响。它不会连接云数据库。
+
+需要显式授权的云端只读检查时，加载本机服务端配置并明确指定预期项目。可选用共享数据库的另一应用的公开配置验证：
+
+```sh
+node --env-file=.env.local scripts/check-database-security.mjs \
+  --run-live --expected-project-ref YOUR_PROJECT_REF \
+  --public-env-file ../glucose-mobile/.env.local
+```
+
+不传 `--public-env-file` 时使用本应用本机公开 Key 配置。脚本只发送 HEAD 请求，要求公开访问被拒绝、服务端访问成功，不输出密钥、记录内容或记录计数。不要用管理 Key 替代公开 Key，让匿名测试虚假通过。
 
 如果受限环境不允许 Turbopack 绑定内部工作端口，可使用 `npm run build -- --webpack`。原有全量 lint 问题见[验证记录](../../../docs/VALIDATION.zh-CN.md)。
 

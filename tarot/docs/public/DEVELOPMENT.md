@@ -30,10 +30,17 @@ Review and apply these migrations in filename order to your own empty Supabase p
 2. [OAuth users](../../supabase/migrations/20260911170000_oauth_users.sql).
 3. [Silent reveal](../../supabase/migrations/20260914090000_silent_reveal.sql).
 4. [Public share tokens](../../supabase/migrations/20260915100000_public_share_token.sql).
+5. **Required security boundary:** [Private Tarot tables](../../supabase/migrations/202610260001_private_tarot_tables.sql).
 
 These files define the schema; they do not contain account, reading, or conversation exports. For an existing database, check which migrations have already been applied before adding the remaining ones.
 
-The server accesses the database through an administration client. Server APIs enforce user and guest ownership boundaries. Preserve those checks when adding APIs, and never expose the administration client to the browser.
+The server accesses the database through an administration client. Server APIs enforce user and guest ownership boundaries. Preserve those checks when adding APIs, and never expose the administration client to the browser. API ownership checks alone do not protect a table exposed through Supabase's Data API.
+
+All five `tarot_*` tables are server-only: enable RLS with no client policies, revoke table and independent column privileges from `PUBLIC`, `anon`, and `authenticated`, and retain CRUD for `service_role`. A Supabase-authenticated user of another app is not a Tarot application session. Public sharing is resolved by the server using an opaque token; it does not require anonymous database access.
+
+The security migration is transactional and rerunnable. It changes no user rows and no other apps' tables, policies, schema grants, or default privileges. Apply it to an existing database even when the first four migrations are already installed. Review and execute that one file through the SQL Editor or an authenticated management connection; do not bulk-push unrelated pending migrations in a shared project. The change takes effect in the database immediately; a frontend redeploy is not the fix.
+
+Metadata-only verification is available in [private-tables.sql](../../supabase/checks/private-tables.sql). Expect five tables with RLS enabled, no client policies or table/column privileges for `anon` / `authenticated`, and retained server CRUD. Compare its other-app security fingerprint before and after applying the migration. No user records are queried.
 
 ## Models and OAuth
 
@@ -55,11 +62,24 @@ npm run test:history
 npm run test:config
 npm run test:quota
 npm run test:privacy
+npm run test:database
 npm run lint
 npm run build
 ```
 
 Draft tests use simulated localStorage; history tests use mocked requests. Neither requires a live cloud project. Configuration tests cover default and custom model targets and reject credential-bearing URLs.
+
+`test:database` runs the actual migrations against in-memory PostgreSQL with synthetic data. It checks anonymous and authenticated denial, column grants, RLS defense in depth, server login/session/history/share/usage access, idempotence, and unrelated-table preservation. It makes no cloud calls.
+
+For an explicitly authorized, read-only cloud check, load your local server configuration and supply the expected target. Optionally use the public configuration of another app that shares the database:
+
+```sh
+node --env-file=.env.local scripts/check-database-security.mjs \
+  --run-live --expected-project-ref YOUR_PROJECT_REF \
+  --public-env-file ../glucose-mobile/.env.local
+```
+
+Omit `--public-env-file` to use this app's local public-key configuration. The script sends only HEAD requests, expects public access to be denied and service access to succeed, and logs no keys, row contents, or record counts. Do not replace a public key with an administration key to make the anonymous test pass.
 
 If Turbopack cannot bind its internal worker port in a restricted environment, use `npm run build -- --webpack`. See the [validation snapshot](../../../docs/VALIDATION.md) for the inherited full-lint findings.
 

@@ -46,11 +46,14 @@ npm run dev
 npm run test:draft
 npm run test:history
 npm run test:config
+npm run test:database
 npm run lint
 npm run build
 ```
 
-现有自动化测试覆盖草稿恢复与历史查询等规则；账号、模型流式响应和分享流程仍需在自己的测试环境联调。
+现有自动化测试覆盖草稿恢复、历史查询，以及隔离 PostgreSQL 中的数据库访问控制；账号、模型流式响应和分享流程仍需在自己的测试环境联调。
+
+5 张 Tarot 数据库表必须仅供服务端访问，与其他应用共用 Supabase 项目时也一样。基础表结构创建后必须执行[权限安全迁移](./supabase/migrations/202610260001_private_tarot_tables.sql)，仅靠服务端接口校验无法限制匿名直连 Data API。验证方式见开发说明。
 
 ## 项目结构
 
