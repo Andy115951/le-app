@@ -38,6 +38,12 @@ node ../node_modules/vercel/dist/index.js dev
 
 详细步骤和变量用途见[开发说明](./docs/public/DEVELOPMENT.zh-CN.md)。
 
+## 文档
+
+- [产品路线图](./docs/ROADMAP.zh-CN.md)：当前产品方向、边界和优先级。
+- [新人解读](./docs/guides/beginner-reading.zh-CN.md)：面向新手的市场解读如何工作，以及它的边界。
+- [NDX 来源核查归档](./docs/research-sources/ndx-source-check-2026-09-15.zh-CN.md)：一次官方来源可用性的带日期核查记录。
+
 ## 验证
 
 在 `stock-dashboard/` 执行：

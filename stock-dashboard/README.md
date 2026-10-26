@@ -38,6 +38,12 @@ For layout-only checks, run `python3 -m http.server 8080` from `stock-dashboard/
 
 See the [developer guide](./docs/public/DEVELOPMENT.md) for setup and environment variables.
 
+## Documentation
+
+- [Product roadmap](./docs/ROADMAP.md): current product direction, boundaries, and priorities.
+- [Guided reading](./docs/guides/beginner-reading.md): how the beginner-facing market reading works and its limits.
+- [NDX source check archive](./docs/research-sources/ndx-source-check-2026-09-15.md): a dated record of an official-source availability check.
+
 ## Validation
 
 Run from `stock-dashboard/`:
