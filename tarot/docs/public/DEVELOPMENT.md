@@ -31,6 +31,7 @@ Review and apply these migrations in filename order to your own empty Supabase p
 3. [Silent reveal](../../supabase/migrations/20260914090000_silent_reveal.sql).
 4. [Public share tokens](../../supabase/migrations/20260915100000_public_share_token.sql).
 5. **Required security boundary:** [Private Tarot tables](../../supabase/migrations/202610260001_private_tarot_tables.sql).
+6. [Manual draw progress and atomic operations](../../supabase/migrations/202610270001_manual_draw.sql).
 
 These files define the schema; they do not contain account, reading, or conversation exports. For an existing database, check which migrations have already been applied before adding the remaining ones.
 
@@ -41,6 +42,32 @@ All five `tarot_*` tables are server-only: enable RLS with no client policies, r
 The security migration is transactional and rerunnable. It changes no user rows and no other apps' tables, policies, schema grants, or default privileges. Apply it to an existing database even when the first four migrations are already installed. Review and execute that one file through the SQL Editor or an authenticated management connection; do not bulk-push unrelated pending migrations in a shared project. The change takes effect in the database immediately; a frontend redeploy is not the fix.
 
 Metadata-only verification is available in [private-tables.sql](../../supabase/checks/private-tables.sql). Expect five tables with RLS enabled, no client policies or table/column privileges for `anon` / `authenticated`, and retained server CRUD. Compare its other-app security fingerprint before and after applying the migration. No user records are queried.
+
+## Manual draw flow
+
+The cut deck stays centered while its card layers roll under the pointer. Dragging right decreases the cut position toward the top; dragging left increases the position toward the bottom. Only valid cut positions are rendered: there are no extra backs before position 1 or after position 77. The visible stack is centered from its rotated and scaled bounds, including at either end. The range input retains standard left-to-right increasing values, with both controls synchronized. Vertical swipes remain available for page scrolling, and keyboard controls and reduced motion are supported.
+
+New readings use a shuffle/cut ritual followed by a continuous, horizontally scrollable fan of all 78 cards, with no pagination. The fan indices and cut are visual interaction only: **cards are randomly sampled on selection**, not mapped to hidden positions in advance. The server saves only selected identities privately in `draw_state`. Confirmation reveals these already-sampled cards and removes their private intermediate representation. Refreshing or retrying confirmation does not redraw.
+
+- `POST /api/readings` reserves one reading atomically and returns no card faces. A stable `Idempotency-Key` UUID makes a lost-response retry return the same reading without another charge. Unfinished readings remain in history and can be resumed; abandoning one does not refund its creation quota.
+- `POST /api/readings/[id]/draw` accepts `cut`, `select`, and `confirm`, with an expected revision. Server-only, SECURITY INVOKER RPCs lock the reading row, recheck ownership, reject stale revisions, and preserve existing selected cards when adding another. A fresh cryptographic candidate order is used for new selections; candidates are never persisted as a deck layout or supplied by the browser.
+- Before confirmation, DTOs expose only selected visual indices, position labels, cut progress, and a revision. They never expose `picked`, card IDs, or orientations. Interpretation and follow-up endpoints reject unfinished draws.
+- The migration adds one nullable column and service-only functions, keeps RLS, and does not rewrite existing readings. Legacy readings retain their old reveal flow. UTC-day reading reservations and usage increments use atomic database operations.
+- Apply migration 6 **before** deploying the new app. Do not publish this frontend/backend revision against a database that has only the first five migrations. No production migration is performed by ordinary tests.
+
+Local verification, with no cloud or paid model calls:
+
+```sh
+npm run test:draw
+# Terminal 1: disposable in-memory PostgreSQL, localhost only
+node test/fixtures/manual-draw-server.mjs
+# Terminal 2: override the local cloud settings explicitly
+SUPABASE_URL=http://127.0.0.1:4127 SUPABASE_SERVICE_ROLE_KEY=manual-draw-local-fixture AI_PROVIDER=mock npm run dev -- --webpack -H 127.0.0.1 -p 3127
+# Terminal 3: explicit localhost-only API regression
+node scripts/check-manual-draw-local.mjs --run-local
+```
+
+The fixture has a synthetic account `manual_preview` / `manual_preview_123` for local UI checks only. Closing the fixture process discards all its data. Do not reuse these credentials in any real deployment.
 
 ## Models and OAuth
 
@@ -63,6 +90,7 @@ npm run test:config
 npm run test:quota
 npm run test:privacy
 npm run test:database
+npm run test:draw
 npm run lint
 npm run build
 ```

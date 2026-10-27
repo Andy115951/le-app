@@ -13,7 +13,8 @@
     "test:ai:live": "node --env-file=.env.local --import tsx scripts/smoke-deepseek.mts --run-live",
     "test:quota": "node --experimental-strip-types --test test/quota-state.test.mjs",
     "test:privacy": "node --experimental-strip-types --test test/public-errors.test.mjs",
-    "test:database": "node --test test/database-security.test.mjs"
+    "test:database": "node --test test/database-security.test.mjs",
+    "test:draw": "node --import tsx --test test/manual-draw.test.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.127",

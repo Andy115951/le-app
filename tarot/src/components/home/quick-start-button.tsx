@@ -2,7 +2,7 @@
 
 import { isQuotaExhausted, QUOTA_UNAVAILABLE_MESSAGE } from "@/lib/quota-state";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CUSTOM_SCENE, SCENES, type SceneId } from "@/data/scenes";
 import { readUserPrefs } from "@/lib/user-prefs";
@@ -28,13 +28,13 @@ export function QuickStartButton({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [quotaBlocked, setQuotaBlocked] = useState(false);
+  const createRequest = useRef<{ body: string; key: string } | null>(null);
 
   const scene = ALL.find((s) => s.id === sceneId) ?? CUSTOM_SCENE;
   const question = scene.exampleQuestion.trim();
   if (question.length < 4) return null;
 
-  const readingsExhausted =
-    isQuotaExhausted(quotaState, "readings");
+  const readingsExhausted = isQuotaExhausted(quotaState, "readings");
 
   async function onQuickStart(e: React.MouseEvent) {
     e.preventDefault();
@@ -58,17 +58,23 @@ export function QuickStartButton({
     setQuotaBlocked(false);
     try {
       const prefs = readUserPrefs();
+      const body = JSON.stringify({
+        question,
+        scene: sceneId,
+        spreadType: scene.defaultSpread,
+        detailLevel: prefs.detailLevel,
+        ritualSpeed: prefs.ritualSpeed,
+        silentReveal: prefs.silentReveal,
+      });
+      if (createRequest.current?.body !== body)
+        createRequest.current = { body, key: crypto.randomUUID() };
       const res = await fetch("/api/readings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question,
-          scene: sceneId,
-          spreadType: scene.defaultSpread,
-          detailLevel: prefs.detailLevel,
-          ritualSpeed: prefs.ritualSpeed,
-          silentReveal: prefs.silentReveal,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": createRequest.current.key,
+        },
+        body,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -82,7 +88,9 @@ export function QuickStartButton({
       router.prefetch(dest);
       router.push(dest);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "起卦没能完成，请稍后再试。");
+      setError(
+        err instanceof Error ? err.message : "起卦没能完成，请稍后再试。",
+      );
       setLoading(false);
     }
   }
@@ -97,7 +105,13 @@ export function QuickStartButton({
         onClick={onQuickStart}
         className="w-full sm:w-auto"
       >
-        {loading ? "起卦中…" : quotaState.error ? "额度暂不可用" : readingsExhausted ? "今日额度已用尽" : label}
+        {loading
+          ? "起卦中…"
+          : quotaState.error
+            ? "额度暂不可用"
+            : readingsExhausted
+              ? "今日额度已用尽"
+              : label}
       </Button>
       {error ? (
         <div className="mt-2 space-y-2" role="alert">

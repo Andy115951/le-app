@@ -7,7 +7,7 @@ A candlelit tarot web app built with Next.js, React, TypeScript, and Supabase. D
 ## Features
 
 - A 78-card illustrated deck and card reference, with multiple spreads and themed entry points.
-- Adjustable reveal speed, interpretation detail, and silent mode.
+- Manual shuffle/cut ritual and fan selection: cards are sampled on click, saved privately, and revealed together. Adjustable reveal speed, interpretation detail, and silent mode.
 - Streaming interpretations, follow-up questions, symbolic cards, and comparisons with earlier readings on the same question.
 - Recoverable question drafts, paginated and searchable history, question groups, and local favorites.
 - Username and password login, with optional GitHub / Google OAuth.
@@ -47,6 +47,7 @@ npm run test:draft
 npm run test:history
 npm run test:config
 npm run test:database
+npm run test:draw
 npm run lint
 npm run build
 ```

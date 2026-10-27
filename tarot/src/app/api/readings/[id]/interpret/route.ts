@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isReadingDrawn } from "@/lib/manual-draw";
 import { CUSTOM_SCENE, SCENES } from "@/data/scenes";
 import { getTarotAI } from "@/lib/ai";
 import type { InterpretInput } from "@/lib/ai/types";
@@ -21,9 +22,11 @@ import {
 
 type PriorCards = NonNullable<InterpretInput["priorHint"]>["cards"];
 
-function mapCards(
-  prior: { spreadResult: { cards: { positionLabel: string; cardId: string; reversed: boolean }[] } },
-): PriorCards {
+function mapCards(prior: {
+  spreadResult: {
+    cards: { positionLabel: string; cardId: string; reversed: boolean }[];
+  };
+}): PriorCards {
   return prior.spreadResult.cards.map((c) => ({
     positionLabel: c.positionLabel,
     cardId: c.cardId,
@@ -32,9 +35,7 @@ function mapCards(
 }
 
 function sceneLabel(scene: string): string {
-  return (
-    [...SCENES, CUSTOM_SCENE].find((s) => s.id === scene)?.label ?? scene
-  );
+  return [...SCENES, CUSTOM_SCENE].find((s) => s.id === scene)?.label ?? scene;
 }
 
 function buildPriorHint(
@@ -70,9 +71,17 @@ export async function POST(
     const user = await getCurrentUser();
     const anon = await ensureAnonymousId();
     const reading = await getReading(id);
-    if (!reading || !(await canAccessReading(reading, user?.id ?? null, anon))) {
+    if (
+      !reading ||
+      !(await canAccessReading(reading, user?.id ?? null, anon))
+    ) {
       return NextResponse.json({ error: "未找到" }, { status: 404 });
     }
+    if (!isReadingDrawn(reading))
+      return NextResponse.json(
+        { error: "请先选满牌并确认，再开始解读。" },
+        { status: 409 },
+      );
     const existing = await listMessages(id);
     const hasAssistant = existing.some((m) => m.role === "assistant");
     if (hasAssistant) {

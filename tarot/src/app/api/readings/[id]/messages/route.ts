@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isReadingDrawn } from "@/lib/manual-draw";
 import { getTarotAI } from "@/lib/ai";
 import {
   ndjsonStreamResponse,
@@ -88,10 +89,18 @@ export async function POST(
     }
 
     const reading = await getReading(id);
-    if (!reading || !(await canAccessReading(reading, user?.id ?? null, anon))) {
+    if (
+      !reading ||
+      !(await canAccessReading(reading, user?.id ?? null, anon))
+    ) {
       return NextResponse.json({ error: "未找到" }, { status: 404 });
     }
 
+    if (!isReadingDrawn(reading))
+      return NextResponse.json(
+        { error: "请先完成选牌，再继续追问。" },
+        { status: 409 },
+      );
     let storedContent: string;
     let visibleText: string;
 

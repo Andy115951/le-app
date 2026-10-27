@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import type { RitualSpeed, SceneId } from "@/data/scenes";
 import { sceneScript } from "@/data/scenes";
 import type { DrawnCard, SpreadResult } from "@/lib/types";
 import { getCard } from "@/data/deck";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TarotCardBack, TarotCardFace } from "@/components/reading/tarot-card-face";
+import {
+  TarotCardBack,
+  TarotCardFace,
+} from "@/components/reading/tarot-card-face";
 import { spreadLabel } from "@/lib/spread-label";
 import { cn } from "@/lib/utils";
 
@@ -70,7 +79,7 @@ function SpreadCard({
             <div className="tarot-flip-back">
               <TarotCardBack />
             </div>
-            <div className="tarot-flip-front space-y-2">
+            <div className="tarot-flip-front space-y-2" aria-hidden={!visible}>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-lg font-medium text-primary">{name}</span>
                 <Badge variant={drawn.reversed ? "destructive" : "secondary"}>
@@ -95,18 +104,22 @@ export function RitualStage({
   scene,
   onDone,
   alreadyDone = false,
+  revealOnly = false,
 }: {
   speed: RitualSpeed;
   spread: SpreadResult;
   scene: SceneId;
   onDone: () => void;
   alreadyDone?: boolean;
+  revealOnly?: boolean;
 }) {
   const delay = SPEEDS[speed] ?? 650;
   const script = useMemo(() => sceneScript(scene), [scene]);
   const cards = useMemo(() => spread.cards, [spread]);
   const isCeltic = spread.spread === "celtic_cross";
-  const [step, setStep] = useState(alreadyDone ? STEPS.length : 0);
+  const [step, setStep] = useState(
+    alreadyDone ? STEPS.length : revealOnly ? STEPS.length - 1 : 0,
+  );
   const [revealedCount, setRevealedCount] = useState(
     alreadyDone ? cards.length : 0,
   );
@@ -125,7 +138,10 @@ export function RitualStage({
     }
     if (flipping) {
       if (revealedCount < cards.length) return;
-      const t = setTimeout(() => setStep((s) => s + 1), Math.max(200, Math.floor(delay * 0.35)));
+      const t = setTimeout(
+        () => setStep((s) => s + 1),
+        Math.max(200, Math.floor(delay * 0.35)),
+      );
       return () => clearTimeout(t);
     }
     if (done) {
@@ -137,7 +153,16 @@ export function RitualStage({
     }
     const t = setTimeout(() => setStep((s) => s + 1), delay);
     return () => clearTimeout(t);
-  }, [step, delay, done, flipping, revealedCount, cards.length, onDone, alreadyDone]);
+  }, [
+    step,
+    delay,
+    done,
+    flipping,
+    revealedCount,
+    cards.length,
+    onDone,
+    alreadyDone,
+  ]);
 
   useEffect(() => {
     if (alreadyDone || !flipping) return;
@@ -165,8 +190,13 @@ export function RitualStage({
         aria-live="polite"
         aria-atomic="true"
       >
-        <div className="ritual-glow pointer-events-none absolute inset-0" aria-hidden />
-        <p className="relative text-sm tracking-[0.35em] text-primary/80">仪式</p>
+        <div
+          className="ritual-glow pointer-events-none absolute inset-0"
+          aria-hidden
+        />
+        <p className="relative text-sm tracking-[0.35em] text-primary/80">
+          仪式
+        </p>
         <p className="relative mt-3 text-lg text-foreground">{stageLabel}</p>
         {!done ? (
           <p className="relative mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
@@ -194,7 +224,10 @@ export function RitualStage({
           />
         </div>
         {step === 1 && (
-          <div className="ritual-deck mx-auto mt-6 flex justify-center gap-1" aria-hidden>
+          <div
+            className="ritual-deck mx-auto mt-6 flex justify-center gap-1"
+            aria-hidden
+          >
             {[0, 1, 2, 3, 4].map((i) => (
               <span
                 key={i}
@@ -231,7 +264,8 @@ export function RitualStage({
               <div
                 className="hidden gap-3 sm:grid"
                 style={{
-                  gridTemplateColumns: "minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr) minmax(0,1fr)",
+                  gridTemplateColumns:
+                    "minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr) minmax(0,1fr)",
                   gridTemplateAreas: `
                     ". crown crown self"
                     "past present future environment"

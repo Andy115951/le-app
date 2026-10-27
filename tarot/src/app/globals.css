@@ -227,6 +227,34 @@
   }
 }
 
+/* All 78 backs share one continuously scrollable fan, with usable tap strips. */
+.manual-draw { background-image: radial-gradient(ellipse at 50% 45%, oklch(0.5 0.08 65 / 8%), transparent 70%); }
+.manual-pile-layer { transform: translate(calc(var(--layer) * 1px), calc(var(--layer) * -2px)) rotate(calc((var(--layer) - 3) * 1deg)); transition: transform 650ms ease; }
+.manual-pile--shuffle .manual-pile-layer { animation: manual-shuffle 650ms ease-in-out infinite alternate; animation-delay: calc(var(--layer) * -70ms); }
+.manual-cut-deck { touch-action: pan-y; cursor: grab; }
+.manual-cut-deck[data-dragging="true"] { cursor: grabbing; }
+.manual-cut-deck[aria-disabled="true"] { cursor: wait; }
+.manual-cut-track { transform: translateX(var(--cut-center)); transition: transform 180ms ease-out; }
+.manual-cut-card { transform: translateX(calc(-50% + var(--cut-x))) translateY(var(--cut-y)) rotate(var(--cut-angle)) scale(var(--cut-scale)); transform-origin: center 90%; transition: transform 180ms ease-out, opacity 180ms ease-out; }
+.manual-cut-deck[data-dragging="true"] .manual-cut-card { transition: none; }
+@keyframes manual-shuffle { from { transform: translate(-18px, -3px) rotate(-9deg); } to { transform: translate(20px, -14px) rotate(8deg); } }
+.manual-fan { overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: oklch(0.65 0.09 65 / 45%) transparent; cursor: grab; }
+.manual-fan:active { cursor: grabbing; }
+.manual-fan::-webkit-scrollbar { height: 4px; }
+.manual-fan::-webkit-scrollbar-thumb { background: oklch(0.65 0.09 65 / 45%); border-radius: 4px; }
+.manual-fan-glow { background: radial-gradient(ellipse at 50% 65%, oklch(0.75 0.12 65 / 10%), transparent 60%); }
+.manual-fan-card { transform: translateY(var(--fan-y)) rotate(var(--fan-angle)); transform-origin: center 110%; transition: translate 220ms ease, filter 220ms ease; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+.manual-fan-card:not(:disabled):hover, .manual-fan-card:focus-visible { translate: 0 -14px; filter: brightness(1.25); z-index: 100 !important; }
+.manual-fan-card[data-selected="true"] { translate: 0 -20px; }
+.manual-fan-card:disabled:not([data-selected="true"]) { filter: saturate(0.6) brightness(0.75); }
+.manual-slot--filled { animation: manual-land 250ms ease-out; }
+@keyframes manual-land { from { opacity: 0.5; transform: translateY(12px) scale(0.94); } to { opacity: 1; transform: none; } }
+@media(prefers-reduced-motion: reduce) {
+  .manual-pile-layer, .manual-cut-track, .manual-cut-card, .manual-fan-card, .manual-slot--filled { animation: none !important; transition: none !important; }
+  .tarot-flip--revealed .tarot-flip-front { transform: none; backface-visibility: visible; }
+  .tarot-flip--revealed .tarot-flip-back { visibility: hidden; }
+}
+
 /* Skip link — visible on keyboard focus */
 .skip-link {
   position: absolute;

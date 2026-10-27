@@ -36,6 +36,7 @@ export default async function ReadingPage({
   });
   return (
     <ReadingClient
+      key={reading.id}
       initialReading={reading}
       initialMessages={messages}
       priorReading={prior}

@@ -31,6 +31,7 @@
 3. [静默揭晓](../../supabase/migrations/20260914090000_silent_reveal.sql)。
 4. [公开分享令牌](../../supabase/migrations/20260915100000_public_share_token.sql)。
 5. **必须执行的安全边界：**[Tarot 私有表权限](../../supabase/migrations/202610260001_private_tarot_tables.sql)。
+6. [手动抽牌进度与原子操作](../../supabase/migrations/202610270001_manual_draw.sql)。
 
 这些文件提供表结构，不包含账号、占卜记录或对话导出。已有数据库应核对已应用的迁移，再执行后续文件。
 
@@ -41,6 +42,32 @@
 安全迁移使用事务，可以重复执行，不改动用户记录，也不改动其他应用的表、策略、schema 授权或默认权限。即使前 4 个迁移已安装，已有数据库也必须执行这一安全迁移。审阅后通过 SQL Editor 或已认证的管理连接仅执行该文件，不要在共享项目上批量推送无关的待执行迁移。权限修改立即在数据库生效，重新部署前端不能代替修复。
 
 [private-tables.sql](../../supabase/checks/private-tables.sql) 提供纯元数据检查：应有 5 张表启用 RLS，无客户端策略，`anon` / `authenticated` 无表级和列级权限，服务端仍有增删改查权限。迁移前后对比其他应用权限指纹，应保持一致。检查不查询用户记录。
+
+## 手动抽牌流程
+
+切牌时整副牌堆固定居中，只让牌层跟随指针滚动。右拖时切牌张数减小、靠近牌顶；左拖时张数增大、靠近牌底。仅渲染有效切牌位置，第 1 张左侧、第 77 张右侧不添加额外牌背；按旋转及缩放后的可见牌堆边界居中，两端也保持整体居中。下方滑杆保留标准的左小右大方向，两种操作同步更新；竖向滑动保留页面滚动，也支持键盘和减少动态效果设置。
+
+新局先洗牌、切牌，再从整副 78 张连续展开的扇形牌堆选牌，左右滑动浏览，不分页。位置和切牌只负责交互仪式感：**点击时才随机抽牌**，不会预先把牌面映射到某个位置。服务端仅将已抽出的牌面私下保存到 `draw_state`，确认时揭晓这些结果并移除中间隐藏数据。刷新及重复确认不会重抽。
+
+- `POST /api/readings` 原子计入一次新占卜，返回时没有牌面。稳定的 `Idempotency-Key` UUID 使响应丢失后的重试复用原记录，不重复扣额。未完成的局会保留在历史，可点开继续；放弃一局不退还创建额度。
+- `POST /api/readings/[id]/draw` 接受 `cut`、`select`、`confirm` 和预期修订号。仅服务端可执行的 SECURITY INVOKER RPC 锁定本局记录、重新校验归属、拒绝过期修订；继续加选时保留已有结果。新选牌使用服务端即时生成的加密随机候选顺序，不持久化完整牌堆，也不接受浏览器指定牌面。
+- 确认前的 DTO 只含选中的视觉索引、牌位标签、切牌进度和修订号，不含 `picked`、牌面 ID 或正逆位。未完成选牌时，解读和追问接口拒绝调用。
+- 迁移只增加一个可空列和仅服务端函数，保留 RLS，不改写旧记录；旧局仍沿用原揭晓流程。UTC 日额度预留和增量更新使用数据库原子操作。
+- 上线顺序为先执行第 6 个迁移，再部署新应用。不能将这一版前后端部署到只执行前 5 个迁移的数据库；普通测试不执行生产迁移。
+
+本机验证，不访问云数据库或真实模型：
+
+```sh
+npm run test:draw
+# 终端 1：仅本机访问、内存 PostgreSQL 虚构数据
+node test/fixtures/manual-draw-server.mjs
+# 终端 2：显式覆盖本机云配置
+SUPABASE_URL=http://127.0.0.1:4127 SUPABASE_SERVICE_ROLE_KEY=manual-draw-local-fixture AI_PROVIDER=mock npm run dev -- --webpack -H 127.0.0.1 -p 3127
+# 终端 3：显式限定 localhost 的 API 回归
+node scripts/check-manual-draw-local.mjs --run-local
+```
+
+预览服务内的虚构账号 `manual_preview` / `manual_preview_123` 仅用于本机 UI 检查，关闭服务进程后所有数据消失。不要在真实环境使用这些凭据。
 
 ## 模型与 OAuth
 
@@ -63,6 +90,7 @@ npm run test:config
 npm run test:quota
 npm run test:privacy
 npm run test:database
+npm run test:draw
 npm run lint
 npm run build
 ```

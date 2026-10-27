@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { randomBytes, randomInt } from "crypto";
 import { TAROT_DECK } from "@/data/deck";
 import type { SpreadType } from "@/data/scenes";
 import type { DrawnCard, SpreadResult } from "@/lib/types";
@@ -6,8 +6,7 @@ import type { DrawnCard, SpreadResult } from "@/lib/types";
 function secureShuffle<T>(items: T[]): T[] {
   const arr = [...items];
   for (let i = arr.length - 1; i > 0; i--) {
-    const buf = randomBytes(4);
-    const j = buf.readUInt32BE(0) % (i + 1);
+    const j = randomInt(i + 1);
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -69,7 +68,7 @@ const CELTIC_CROSS = [
   { position: "outcome", positionLabel: "综合走向" },
 ] as const;
 
-function positionsFor(spread: SpreadType) {
+export function positionsFor(spread: SpreadType) {
   if (spread === "single") return SINGLE;
   if (spread === "five_cross") return FIVE_CROSS;
   if (spread === "relation_dual") return RELATION_DUAL;
@@ -77,6 +76,14 @@ function positionsFor(spread: SpreadType) {
   if (spread === "moon_triad") return MOON_TRIAD;
   if (spread === "celtic_cross") return CELTIC_CROSS;
   return THREE;
+}
+
+/** Transient pool sampled at click time; never persisted as a deck layout. */
+export function createDrawCandidates() {
+  return secureShuffle(TAROT_DECK).map((card) => ({
+    cardId: card.id,
+    reversed: coinFlip(),
+  }));
 }
 
 export function drawSpread(spread: SpreadType): SpreadResult {
@@ -122,9 +129,7 @@ export function drawSingleCards(
     let picked = shuffled.find((c) => !used.has(c.id));
     if (!picked) {
       // Exhausted pool — reshuffle full deck minus used
-      const fallback = secureShuffle(
-        TAROT_DECK.filter((c) => !used.has(c.id)),
-      );
+      const fallback = secureShuffle(TAROT_DECK.filter((c) => !used.has(c.id)));
       picked = fallback[0] ?? shuffled[i % shuffled.length]!;
     }
     used.add(picked.id);

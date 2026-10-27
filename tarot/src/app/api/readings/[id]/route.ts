@@ -24,7 +24,10 @@ export async function GET(
     return NextResponse.json({ error: "未找到" }, { status: 404 });
   }
   const messages = await listMessages(id);
-  return NextResponse.json({ reading, messages });
+  return NextResponse.json(
+    { reading, messages },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }
 
 export async function PATCH(

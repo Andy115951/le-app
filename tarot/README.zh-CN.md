@@ -7,7 +7,7 @@
 ## 功能
 
 - 78 张牌面与牌义图鉴，多种牌阵和情境入口。
-- 可调整揭晓速度、解读详略和静默模式。
+- 手动洗牌、切牌与扇形选牌：点击时随机抽牌并保存，选满后统一揭晓；可调整揭晓速度、解读详略和静默模式。
 - 流式解读、追问、象征牌与同题回看。
 - 问题草稿恢复，历史分页、搜索、同题分组和本机收藏。
 - 用户名密码登录，可选 GitHub / Google OAuth。
@@ -47,6 +47,7 @@ npm run test:draft
 npm run test:history
 npm run test:config
 npm run test:database
+npm run test:draw
 npm run lint
 npm run build
 ```

@@ -2,7 +2,14 @@
 
 import { isQuotaExhausted, QUOTA_UNAVAILABLE_MESSAGE } from "@/lib/quota-state";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import type { RitualSpeed } from "@/data/scenes";
 import type { Message, Reading } from "@/lib/types";
@@ -10,6 +17,7 @@ import { useQuota } from "@/hooks/use-quota";
 import { QuotaHint } from "@/components/quota/quota-hint";
 import { GuestLoginCta } from "@/components/quota/guest-login-cta";
 import { RitualStage } from "@/components/reading/ritual-stage";
+import { ManualDrawStage } from "@/components/reading/manual-draw-stage";
 import { ShareReadingButton } from "@/components/reading/share-reading-button";
 import { PublicShareButton } from "@/components/reading/public-share-button";
 import { CandleTokenButton } from "@/components/reading/candle-token-button";
@@ -121,7 +129,10 @@ async function readNdjsonStream(
       else if (event.t === "done") messages = event.messages;
       else if (event.t === "error") {
         throw new ApiError(
-          warmError("烛火晃了一下，这次没能完成。稍后再试一次吧。", event.error),
+          warmError(
+            "烛火晃了一下，这次没能完成。稍后再试一次吧。",
+            event.error,
+          ),
         );
       }
     }
@@ -133,6 +144,11 @@ async function readNdjsonStream(
   return messages;
 }
 
+function subscribeTokenStorage(listener: () => void) {
+  window.addEventListener("storage", listener);
+  return () => window.removeEventListener("storage", listener);
+}
+
 export function ReadingClient({
   initialReading,
   initialMessages,
@@ -142,7 +158,8 @@ export function ReadingClient({
   initialMessages: Message[];
   priorReading?: Reading | null;
 }) {
-  const [reading] = useState(initialReading);
+  const [reading, setReading] = useState(initialReading);
+  const [wasManualDraw] = useState(Boolean(initialReading.manualDraw));
   const [messages, setMessages] = useState(initialMessages);
   const [ritualDone, setRitualDone] = useState(initialMessages.length > 0);
   const [interpreting, setInterpreting] = useState(false);
@@ -152,7 +169,13 @@ export function ReadingClient({
   const [quotaBlocked, setQuotaBlocked] = useState(false);
   const [streamingText, setStreamingText] = useState("");
   const [redrawDismissed, setRedrawDismissed] = useState(false);
-  const [tokenLit, setTokenLit] = useState(false);
+  const [tokenLitThisView, setTokenLit] = useState(false);
+  const tokenLitStored = useSyncExternalStore(
+    subscribeTokenStorage,
+    () => hasTokenLitLocal(reading.id),
+    () => false,
+  );
+  const tokenLit = tokenLitThisView || tokenLitStored;
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const interpretationRequested = useRef(false);
   const quotaState = useQuota();
@@ -172,10 +195,6 @@ export function ReadingClient({
       block: "start",
     });
   }
-
-  useEffect(() => {
-    setTokenLit(hasTokenLitLocal(reading.id));
-  }, [reading.id]);
 
   const markTokenLit = useCallback(() => {
     markTokenLitLocal(reading.id);
@@ -340,10 +359,8 @@ export function ReadingClient({
   }
 
   const speedLabel = SPEED_LABEL[reading.ritualSpeed] ?? reading.ritualSpeed;
-  const messagesExhausted =
-    isQuotaExhausted(quotaState, "messages");
-  const chainExhausted =
-    isQuotaExhausted(quotaState, "messages", 3);
+  const messagesExhausted = isQuotaExhausted(quotaState, "messages");
+  const chainExhausted = isQuotaExhausted(quotaState, "messages", 3);
 
   return (
     <div className="space-y-6">
@@ -352,7 +369,9 @@ export function ReadingClient({
           <h1 className="text-2xl font-semibold tracking-tight">
             {reading.title || "占卜"}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{reading.question}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {reading.question}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">
@@ -380,13 +399,18 @@ export function ReadingClient({
       />
 
       <div id={TIMELINE_ANCHORS.reveal} className="scroll-mt-44">
-        <RitualStage
-          speed={reading.ritualSpeed}
-          spread={reading.spreadResult}
-          scene={reading.scene}
-          alreadyDone={initialMessages.length > 0}
-          onDone={() => setRitualDone(true)}
-        />
+        {reading.manualDraw ? (
+          <ManualDrawStage reading={reading} onChange={setReading} />
+        ) : (
+          <RitualStage
+            speed={reading.ritualSpeed}
+            spread={reading.spreadResult}
+            scene={reading.scene}
+            alreadyDone={initialMessages.length > 0}
+            revealOnly={wasManualDraw || reading.manuallyDrawn}
+            onDone={() => setRitualDone(true)}
+          />
+        )}
       </div>
 
       {ritualDone && priorReading ? (
@@ -399,7 +423,12 @@ export function ReadingClient({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-base">解读</CardTitle>
               {messages.some((m) => m.role === "assistant") ? (
-                <Button type="button" size="sm" variant="secondary" onClick={focusFollowUp}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={focusFollowUp}
+                >
                   继续追问
                 </Button>
               ) : null}
@@ -416,8 +445,16 @@ export function ReadingClient({
                   : "可继续追问"}
             </CardDescription>
             {userFollowUps > 0 || interpreting || sending ? (
-              <Button type="button" size="sm" variant="link" className="justify-start px-0" onClick={showLatestReply}>
-                {interpreting || sending ? "查看正在生成的回复 ↓" : "查看最新回复 ↓"}
+              <Button
+                type="button"
+                size="sm"
+                variant="link"
+                className="justify-start px-0"
+                onClick={showLatestReply}
+              >
+                {interpreting || sending
+                  ? "查看正在生成的回复 ↓"
+                  : "查看最新回复 ↓"}
               </Button>
             ) : null}
           </CardHeader>
@@ -519,7 +556,14 @@ export function ReadingClient({
                 return (
                   <div
                     key={m.id}
-                    id={!streamingText && !interpreting && !sending && index === messages.length - 1 ? "reading-latest-reply" : undefined}
+                    id={
+                      !streamingText &&
+                      !interpreting &&
+                      !sending &&
+                      index === messages.length - 1
+                        ? "reading-latest-reply"
+                        : undefined
+                    }
                     className={
                       isUser
                         ? "ml-6 flex scroll-mt-44 flex-col items-end gap-1 sm:ml-12"
@@ -611,7 +655,9 @@ export function ReadingClient({
                           ) : null}
                         </div>
                       ) : isUser ? (
-                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{m.content}</p>
+                        <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                          {m.content}
+                        </p>
                       ) : (
                         <AdvisorMarkdown>{m.content}</AdvisorMarkdown>
                       )}
@@ -620,7 +666,10 @@ export function ReadingClient({
                 );
               })}
               {interpreting || sending ? (
-                <div id="reading-latest-reply" className="flex min-w-0 scroll-mt-44 flex-col items-start gap-1">
+                <div
+                  id="reading-latest-reply"
+                  className="flex min-w-0 scroll-mt-44 flex-col items-start gap-1"
+                >
                   <span className="px-1 text-[10px] tracking-wider text-amber-200/70">
                     烛火解读
                   </span>
@@ -628,8 +677,15 @@ export function ReadingClient({
                     className="w-full min-w-0 rounded-2xl rounded-bl-md border border-amber-500/35 bg-card/55 px-4 py-4 text-sm leading-relaxed shadow-[inset_0_0_22px_oklch(0.78_0.12_75/10%)] sm:px-5"
                     aria-label="正在浮现的解读"
                   >
-                    {streamingText ? <AdvisorMarkdown>{streamingText}</AdvisorMarkdown> : (
-                      <p className="text-sm text-muted-foreground" role="status">烛火正在整理字句…</p>
+                    {streamingText ? (
+                      <AdvisorMarkdown>{streamingText}</AdvisorMarkdown>
+                    ) : (
+                      <p
+                        className="text-sm text-muted-foreground"
+                        role="status"
+                      >
+                        烛火正在整理字句…
+                      </p>
                     )}
                     <span
                       className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-amber-400/80 align-middle"
@@ -681,12 +737,26 @@ export function ReadingClient({
               <form
                 id={TIMELINE_ANCHORS.followup}
                 className="space-y-3 scroll-mt-44 border-t border-border/60 pt-5"
-                onSubmit={(e) => { e.preventDefault(); void sendFollowUp(); }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void sendFollowUp();
+                }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label htmlFor="reading-followup-draft" className="block text-base font-medium">继续追问</label>
+                  <label
+                    htmlFor="reading-followup-draft"
+                    className="block text-base font-medium"
+                  >
+                    继续追问
+                  </label>
                   {userFollowUps > 0 ? (
-                    <Button type="button" size="sm" variant="link" className="px-0" onClick={showLatestReply}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="link"
+                      className="px-0"
+                      onClick={showLatestReply}
+                    >
                       {sending ? "查看正在生成的回复 ↑" : "查看最新回复 ↑"}
                     </Button>
                   ) : null}
@@ -712,34 +782,51 @@ export function ReadingClient({
                       onKeyDown={(e) => {
                         if (e.key !== "Enter") return;
                         // IME composing (e.g. Pinyin) — let Enter confirm candidates
-                        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                        if (e.nativeEvent.isComposing || e.keyCode === 229)
+                          return;
                         // Desktop only: Enter sends; Shift/Ctrl/Meta+Enter inserts newline
                         if (e.shiftKey || e.ctrlKey || e.metaKey) return;
                         const desktop =
                           typeof window !== "undefined" &&
-                          window.matchMedia("(pointer: fine) and (hover: hover)")
-                            .matches;
+                          window.matchMedia(
+                            "(pointer: fine) and (hover: hover)",
+                          ).matches;
                         if (!desktop) return;
                         e.preventDefault();
-                        if (sending || interpreting || quotaUnavailable || messagesExhausted) return;
+                        if (
+                          sending ||
+                          interpreting ||
+                          quotaUnavailable ||
+                          messagesExhausted
+                        )
+                          return;
                         void sendFollowUp();
                       }}
                       placeholder={
                         messagesExhausted
-                          ? (!quotaState.user
-                              ? "访客追问烛火已用尽，可轻轻登录继续…"
-                              : "今日追问额度已用尽…")
+                          ? !quotaState.user
+                            ? "访客追问烛火已用尽，可轻轻登录继续…"
+                            : "今日追问额度已用尽…"
                           : "这段解读里，你还想看清什么？"
                       }
                       rows={2}
                       maxLength={500}
                       className="min-h-24 max-h-60 resize-y scroll-mt-44 overflow-y-auto text-base md:text-sm"
-                      disabled={sending || interpreting || quotaUnavailable || messagesExhausted}
+                      disabled={
+                        sending ||
+                        interpreting ||
+                        quotaUnavailable ||
+                        messagesExhausted
+                      }
                       aria-label="追问内容"
                     />
                     <div className="flex justify-between gap-2 text-xs text-muted-foreground">
-                      <p className="hidden sm:block">Enter 发送 · Shift / Ctrl + Enter 换行</p>
-                      <span className="ml-auto tabular-nums">{draft.length}/500</span>
+                      <p className="hidden sm:block">
+                        Enter 发送 · Shift / Ctrl + Enter 换行
+                      </p>
+                      <span className="ml-auto tabular-nums">
+                        {draft.length}/500
+                      </span>
                     </div>
                   </div>
                   <div className="flex justify-end">
@@ -749,7 +836,8 @@ export function ReadingClient({
                       disabled={
                         sending ||
                         interpreting ||
-                        quotaUnavailable || messagesExhausted ||
+                        quotaUnavailable ||
+                        messagesExhausted ||
                         !draft.trim()
                       }
                       aria-label="发送追问"
@@ -762,7 +850,10 @@ export function ReadingClient({
                       想借一张牌继续看？
                     </summary>
                     <div className="space-y-3 px-3 pb-3">
-                      <p className="text-xs leading-relaxed text-muted-foreground">可以带上上方的问题，也可以留空。象征牌消耗 1 次追问，牌链消耗 3 次。</p>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        可以带上上方的问题，也可以留空。象征牌消耗 1
+                        次追问，牌链消耗 3 次。
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         <Button
                           type="button"
@@ -770,7 +861,12 @@ export function ReadingClient({
                           onClick={() =>
                             void sendFollowUp({ withSubSpread: "single" })
                           }
-                          disabled={sending || interpreting || quotaUnavailable || messagesExhausted}
+                          disabled={
+                            sending ||
+                            interpreting ||
+                            quotaUnavailable ||
+                            messagesExhausted
+                          }
                           aria-label="抽一张象征牌，消耗一次追问额度，文字可选"
                           title="抽一张象征牌（消耗 1 次追问，文字可选）"
                         >
@@ -782,7 +878,12 @@ export function ReadingClient({
                           onClick={() =>
                             void sendFollowUp({ withSubSpread: "chain" })
                           }
-                          disabled={sending || interpreting || quotaUnavailable || chainExhausted}
+                          disabled={
+                            sending ||
+                            interpreting ||
+                            quotaUnavailable ||
+                            chainExhausted
+                          }
                           aria-label="抽象征牌链，连抽三张象征牌，消耗三次追问额度，文字可选"
                           title="抽象征牌链（消耗 3 次追问，文字可选）"
                         >
@@ -799,17 +900,26 @@ export function ReadingClient({
       )}
 
       {ritualDone && messages.some((m) => m.role === "assistant") ? (
-        <details id={TIMELINE_ANCHORS.token} className="group scroll-mt-44 rounded-xl border border-border/60 bg-card/40">
+        <details
+          id={TIMELINE_ANCHORS.token}
+          className="group scroll-mt-44 rounded-xl border border-border/60 bg-card/40"
+        >
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
             <span className="space-y-1">
               <span className="block text-sm font-medium">留住这局</span>
-              <span className="block text-xs text-muted-foreground">分享牌阵、公开链接与烛火信物</span>
+              <span className="block text-xs text-muted-foreground">
+                分享牌阵、公开链接与烛火信物
+              </span>
             </span>
             <span className="text-xs text-primary group-open:hidden">展开</span>
-            <span className="hidden text-xs text-primary group-open:block">收起</span>
+            <span className="hidden text-xs text-primary group-open:block">
+              收起
+            </span>
           </summary>
           <div className="space-y-3 border-t border-border/60 px-4 py-4">
-            <p className="text-xs leading-relaxed text-muted-foreground">分享内容包含你的问题与牌阵，不含完整解读和追问。公开链接可随时关闭。</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              分享内容包含你的问题与牌阵，不含完整解读和追问。公开链接可随时关闭。
+            </p>
             <div className="flex flex-wrap items-center gap-2">
               <ShareReadingButton reading={reading} />
               <PublicShareButton reading={reading} />

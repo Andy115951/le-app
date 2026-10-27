@@ -1,4 +1,9 @@
-import type { DetailLevel, RitualSpeed, SceneId, SpreadType } from "@/data/scenes";
+import type {
+  DetailLevel,
+  RitualSpeed,
+  SceneId,
+  SpreadType,
+} from "@/data/scenes";
 
 export type ReadingStatus =
   | "draft"
@@ -22,6 +27,14 @@ export type SpreadResult = {
   cards: DrawnCard[];
 };
 
+export type ManualDrawState = {
+  cardCount: number;
+  revision: number;
+  cutIndex: number | null;
+  selected: number[];
+  positions: Array<{ position: string; positionLabel: string }>;
+};
+
 export type Reading = {
   id: string;
   userId: string | null;
@@ -40,6 +53,9 @@ export type Reading = {
   deletedAt: string | null;
   /** Opaque public share slug; null = link disabled. */
   publicShareToken: string | null;
+  /** Only public progress, never unrevealed card identities. Absent for legacy readings. */
+  manualDraw?: ManualDrawState | null;
+  manuallyDrawn?: boolean;
 };
 
 export type Message = {

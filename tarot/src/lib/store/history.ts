@@ -36,7 +36,7 @@ export async function listHistoryPage(
       cardNames:
         (r.spread_result as SpreadResult | null)?.cards
           ?.map((c) => getCard(c.cardId)?.nameZh ?? c.cardId)
-          .join(" / ") ?? "",
+          .join(" / ") || "待手动抽牌 · 点开继续本局",
       createdAt: String(r.created_at),
       updatedAt: String(r.updated_at),
     })),

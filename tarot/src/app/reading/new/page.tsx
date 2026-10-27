@@ -11,7 +11,7 @@ export default async function NewReadingPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">新占卜</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          选好场景，把问题轻轻放下；确认后开始仪式，牌面会在静心里揭晓。
+          选好场景，把问题轻轻放下；洗牌、切牌后亲手选牌，选满再揭晓。
         </p>
       </div>
       <NewReadingForm initialSceneId={sp.scene} />
