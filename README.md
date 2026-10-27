@@ -2,6 +2,8 @@
 
 English | [简体中文](./README.zh-CN.md)
 
+> **This repository is public.** Keep credentials, private configuration, personal records, and unredacted screenshots or logs out of commits, issues, and PRs. Use synthetic examples and follow the [repository instructions](./AGENTS.md).
+
 A collection of everyday apps for tarot, time tracking, market research, and health journaling. Each project installs its own dependencies and runs and deploys independently.
 
 | Project | Platform and purpose | Development |
