@@ -16,6 +16,7 @@ for (const file of [
   "20260915100000_public_share_token.sql",
   "202610260001_private_tarot_tables.sql",
   "202610270001_manual_draw.sql",
+  "202610270002_manual_draw_conflicts.sql",
 ]) {
   const sql = await readFile(
     new URL(`../../supabase/migrations/${file}`, import.meta.url),

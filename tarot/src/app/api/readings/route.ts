@@ -15,6 +15,7 @@ import {
   listReadings,
 } from "@/lib/store/readings";
 import { isReadingId } from "@/lib/reading-id";
+import { isManualDrawConflict } from "@/lib/manual-draw";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
           { status: 429 },
         );
       }
-      if (e && typeof e === "object" && "code" in e && e.code === "40001")
+      if (isManualDrawConflict(e))
         return NextResponse.json(
           { error: "这次起卦请求已使用，请返回历史继续原来的记录。" },
           { status: 409 },

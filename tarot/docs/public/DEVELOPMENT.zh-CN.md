@@ -32,6 +32,7 @@
 4. [公开分享令牌](../../supabase/migrations/20260915100000_public_share_token.sql)。
 5. **必须执行的安全边界：**[Tarot 私有表权限](../../supabase/migrations/202610260001_private_tarot_tables.sql)。
 6. [手动抽牌进度与原子操作](../../supabase/migrations/202610270001_manual_draw.sql)。
+7. [手动抽牌业务冲突避免重复重试](../../supabase/migrations/202610270002_manual_draw_conflicts.sql)。
 
 这些文件提供表结构，不包含账号、占卜记录或对话导出。已有数据库应核对已应用的迁移，再执行后续文件。
 
@@ -53,7 +54,7 @@
 - `POST /api/readings/[id]/draw` 接受 `cut`、`select`、`confirm` 和预期修订号。仅服务端可执行的 SECURITY INVOKER RPC 锁定本局记录、重新校验归属、拒绝过期修订；继续加选时保留已有结果。新选牌使用服务端即时生成的加密随机候选顺序，不持久化完整牌堆，也不接受浏览器指定牌面。
 - 确认前的 DTO 只含选中的视觉索引、牌位标签、切牌进度和修订号，不含 `picked`、牌面 ID 或正逆位。未完成选牌时，解读和追问接口拒绝调用。
 - 迁移只增加一个可空列和仅服务端函数，保留 RLS，不改写旧记录；旧局仍沿用原揭晓流程。UTC 日额度预留和增量更新使用数据库原子操作。
-- 上线顺序为先执行第 6 个迁移，再部署新应用。不能将这一版前后端部署到只执行前 5 个迁移的数据库；普通测试不执行生产迁移。
+- 上线前先执行第 6、7 个迁移。第 7 个迁移将业务冲突错误码从 `40001` 改为 `P0001`，避免 PostgREST 14 无限重试；API 再将指定业务异常映射回 HTTP 409。原有记录和仅服务端权限保留。参见 [Supabase 排查说明](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions)。普通测试不执行生产迁移。
 
 本机验证，不访问云数据库或真实模型：
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureAnonymousId, getCurrentUser } from "@/lib/auth/session";
-import { parseDrawAction } from "@/lib/manual-draw";
+import { isManualDrawConflict, parseDrawAction } from "@/lib/manual-draw";
 import { isReadingId } from "@/lib/reading-id";
 import {
   applyManualDraw,
@@ -40,7 +40,7 @@ export async function POST(
       return respond({ error: "无效的选牌操作" }, 400);
     const code = e && typeof e === "object" && "code" in e ? e.code : null;
     if (code === "P0002") return respond({ error: "未找到" }, 404);
-    if (code === "40001")
+    if (isManualDrawConflict(e))
       return respond(
         {
           error: "另一页更新了本局，已为你保留最新进度。",

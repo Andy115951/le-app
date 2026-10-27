@@ -5,6 +5,16 @@ export type DrawAction =
   | { action: "select"; revision: number; selected: number[] }
   | { action: "confirm"; revision: number };
 
+/** Business conflicts use P0001 so PostgREST does not retry them as serialization failures. */
+export function isManualDrawConflict(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const value = error as Record<string, unknown>;
+  return value.code === "40001" || (
+    value.code === "P0001" &&
+    (value.message === "draw_conflict" || value.message === "request_conflict")
+  );
+}
+
 export function parseDrawAction(input: unknown): DrawAction | null {
   if (!input || typeof input !== "object" || Array.isArray(input)) return null;
   const value = input as Record<string, unknown>;

@@ -32,6 +32,7 @@ Review and apply these migrations in filename order to your own empty Supabase p
 4. [Public share tokens](../../supabase/migrations/20260915100000_public_share_token.sql).
 5. **Required security boundary:** [Private Tarot tables](../../supabase/migrations/202610260001_private_tarot_tables.sql).
 6. [Manual draw progress and atomic operations](../../supabase/migrations/202610270001_manual_draw.sql).
+7. [Non-retryable manual draw conflicts](../../supabase/migrations/202610270002_manual_draw_conflicts.sql).
 
 These files define the schema; they do not contain account, reading, or conversation exports. For an existing database, check which migrations have already been applied before adding the remaining ones.
 
@@ -53,7 +54,7 @@ New readings use a shuffle/cut ritual followed by a continuous, horizontally scr
 - `POST /api/readings/[id]/draw` accepts `cut`, `select`, and `confirm`, with an expected revision. Server-only, SECURITY INVOKER RPCs lock the reading row, recheck ownership, reject stale revisions, and preserve existing selected cards when adding another. A fresh cryptographic candidate order is used for new selections; candidates are never persisted as a deck layout or supplied by the browser.
 - Before confirmation, DTOs expose only selected visual indices, position labels, cut progress, and a revision. They never expose `picked`, card IDs, or orientations. Interpretation and follow-up endpoints reject unfinished draws.
 - The migration adds one nullable column and service-only functions, keeps RLS, and does not rewrite existing readings. Legacy readings retain their old reveal flow. UTC-day reading reservations and usage increments use atomic database operations.
-- Apply migration 6 **before** deploying the new app. Do not publish this frontend/backend revision against a database that has only the first five migrations. No production migration is performed by ordinary tests.
+- Apply migrations 6 and 7 **before** deploying the new app. Migration 7 replaces business-conflict SQLSTATE `40001` with `P0001`: PostgREST 14 can retry `40001` indefinitely. API routes translate the named business exceptions back to HTTP 409. Existing records and service-only privileges are preserved. See the [Supabase troubleshooting note](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions). No production migration is performed by ordinary tests.
 
 Local verification, with no cloud or paid model calls:
 

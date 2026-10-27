@@ -11,6 +11,7 @@ import {
   parseDrawAction,
   publicDrawState,
   isReadingDrawn,
+  isManualDrawConflict,
 } from "../src/lib/manual-draw.ts";
 
 const uuid = (n) => `30000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -36,6 +37,20 @@ const migration = await readFile(
   ),
   "utf8",
 );
+const conflictMigration = await readFile(
+  new URL('../supabase/migrations/202610270002_manual_draw_conflicts.sql', import.meta.url),
+  'utf8',
+);
+
+test('non-retryable business conflicts map to a recoverable conflict without swallowing quota errors', () => {
+  for (const message of ['draw_conflict', 'request_conflict']) {
+    assert.equal(isManualDrawConflict({ code: 'P0001', message }), true);
+  }
+  assert.equal(isManualDrawConflict({ code: '40001' }), true);
+  for (const error of [null, {}, { code: 'P0001', message: 'reading_quota' }, { code: '22023' }]) {
+    assert.equal(isManualDrawConflict(error), false);
+  }
+});
 
 test("fresh click-time candidates and public progress never reveal card identities", () => {
   const deck = createDrawCandidates();
@@ -162,6 +177,8 @@ test("actual manual-draw migration: ownership, hidden state, quota, cut and immu
     }
     await db.exec(migration);
     await db.exec(migration);
+    await db.exec(conflictMigration);
+    await db.exec(conflictMigration);
     await rows(
       "insert into public.tarot_users(id,username,password_hash) values($1,'synthetic_manual_user','hash'),($2,'synthetic_other','hash')",
       [user, other],
@@ -240,7 +257,9 @@ test("actual manual-draw migration: ownership, hidden state, quota, cut and immu
         assert.deepEqual(saved, progress.draw_state);
         assert.deepEqual(progress.spread_result.cards, []);
         await denied(act(value, "confirm", 2), "22023");
-        await denied(act(value, "select", 1, null, [3]), "40001");
+        await assert.rejects(act(value, "select", 1, null, [3]), {
+          code: "P0001", message: "draw_conflict",
+        });
         progress = await act(value, "select", 2, null, [0]);
         assert.deepEqual(progress.draw_state.selected, [0]);
         progress = await act(value, "select", 3, null, [0, 4, 77]);
@@ -322,7 +341,9 @@ test("actual manual-draw migration: ownership, hidden state, quota, cut and immu
           create(input(50, { user_id: user, anonymous_id: null })),
           "P0001",
         );
-        await denied(create({ ...base, question: "different" }), "40001");
+        await assert.rejects(create({ ...base, question: "different" }), {
+          code: "P0001", message: "request_conflict",
+        });
         assert.equal(
           (
             await rows(
