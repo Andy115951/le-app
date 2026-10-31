@@ -44,3 +44,15 @@ next-env.d.ts
 *.apk
 *.aab
 *.dmg
+/ledger/apps/client/android/
+/ledger/apps/client/ios/
+/ledger/apps/client/.expo/
+/ledger/artifacts/
+/ledger/local-data/
+/ledger/backups/
+/ledger/exports/
+/ledger/screenshots/
+/ledger/.expo/
+/ledger/apps/ui-qa/.expo/
+/ledger/**/ledger-*.json
+/ledger/**/backup*.json

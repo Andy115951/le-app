@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "简账 · 界面 QA",
+    "slug": "ledger-ui-qa",
+    "version": "0.1.0",
+    "web": { "bundler": "metro", "output": "single", "name": "简账 · 界面 QA" }
+  }
+}

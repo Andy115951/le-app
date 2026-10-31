@@ -1,0 +1,11 @@
+{
+  "name": "@ledger/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@ledger/core": "0.1.0",
+    "@ledger/storage": "0.1.0"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "简账",
+  "version": "0.1.0",
+  "identifier": "app.local.ledger",
+  "build": {
+    "beforeDevCommand": "npm run web -w @ledger/client -- --port 8082",
+    "devUrl": "http://localhost:8082",
+    "beforeBuildCommand": "npm run export:web -w @ledger/client",
+    "frontendDist": "../../client/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "简账",
+        "width": 1100,
+        "height": 820,
+        "minWidth": 480,
+        "minHeight": 620
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ipc: http://ipc.localhost; font-src 'self' data:; object-src 'none'",
+      "devCsp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "../../../assets/128x128.png",
+      "../../../assets/icon.icns",
+      "../../../assets/icon.ico"
+    ]
+  }
+}

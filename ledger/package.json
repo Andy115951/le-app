@@ -1,0 +1,37 @@
+{
+  "name": "ledger-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "npm run start -w @ledger/client",
+    "android": "npm run android -w @ledger/client",
+    "android:build": "node scripts/build-android.mjs",
+    "android:build:qa": "node scripts/build-android.mjs --qa",
+    "web": "npm run web -w @ledger/client",
+    "export:android": "npm run export:android -w @ledger/client",
+    "export:web": "npm run export:web -w @ledger/client",
+    "desktop": "npm run dev -w @ledger/desktop",
+    "windows:build": "node scripts/build-windows.mjs",
+    "ui:qa:build": "npm run build -w @ledger/ui-qa",
+    "ui:qa": "node scripts/serve-ui-qa.mjs",
+    "cli": "node --disable-warning=ExperimentalWarning --import tsx apps/cli/src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --disable-warning=ExperimentalWarning --import tsx --test packages/core/test/*.test.ts packages/storage/test/*.test.ts apps/cli/test/*.test.ts apps/client/test/*.test.ts",
+    "test:lan": "cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml --example lan-test-host && node --disable-warning=ExperimentalWarning --import tsx --test apps/desktop/test/lan.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/react": "~19.2.2",
+    "prettier": "^3.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  }
+}

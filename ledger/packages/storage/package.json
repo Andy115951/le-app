@@ -1,0 +1,28 @@
+{
+  "name": "@ledger/storage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts",
+    "./expo": "./src/expo.ts",
+    "./tauri": "./src/tauri.ts"
+  },
+  "dependencies": {
+    "@ledger/core": "0.1.0"
+  },
+  "peerDependencies": {
+    "expo-sqlite": "~57.0.4",
+    "@tauri-apps/api": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "expo-sqlite": {
+      "optional": true
+    },
+    "@tauri-apps/api": {
+      "optional": true
+    }
+  },
+  "license": "MIT"
+}

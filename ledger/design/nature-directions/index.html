@@ -1,0 +1,2800 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>简账 · 自然系视觉提案</title>
+    <style>
+      :root {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+          sans-serif;
+        color: #27372e;
+        background: #e9ece6;
+        font-synthesis: none;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+        color: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #bd6d38;
+        outline-offset: 4px;
+      }
+      button {
+        border: 0;
+        background: none;
+      }
+      button:disabled {
+        cursor: default;
+      }
+      svg {
+        display: block;
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      header.studio {
+        max-width: 1308px;
+        margin: auto;
+        padding: 34px 24px 0;
+      }
+      .studio-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+      }
+      .wordmark {
+        font-family: "Songti SC", "STSong", serif;
+        font-size: 27px;
+        letter-spacing: 3px;
+      }
+      .wordmark span {
+        font:
+          12px -apple-system,
+          sans-serif;
+        letter-spacing: 2px;
+        margin-left: 18px;
+        color: #778174;
+      }
+      .caption {
+        font-size: 12px;
+        color: #71806e;
+        line-height: 1.8;
+      }
+      .intro {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        margin: 22px 0;
+      }
+      .intro h1 {
+        font-size: 25px;
+        font-weight: 500;
+        letter-spacing: 0.8px;
+        margin: 0 0 8px;
+      }
+      .intro p {
+        font-size: 13px;
+        color: #6a786b;
+        margin: 0;
+        line-height: 1.8;
+      }
+      .view-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        border-bottom: 1px solid #bdc7b9;
+      }
+      .view-controls button {
+        padding: 10px 15px;
+        color: #6e7b6c;
+      }
+      .view-controls button[aria-pressed="true"] {
+        color: #254c36;
+        border-bottom: 2px solid #365b40;
+      }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        border-top: 1px solid #cdd4c8;
+        padding: 12px 0 16px;
+      }
+      .page-controls {
+        display: flex;
+        gap: 7px;
+      }
+      .page-controls button {
+        font-size: 13px;
+        padding: 8px 14px;
+        color: #6d796a;
+      }
+      .page-controls button[aria-pressed="true"] {
+        background: #d8e0d3;
+        color: #23432f;
+        border-radius: 3px;
+      }
+      .toolbar .caption {
+        font-size: 11px;
+      }
+      .comparison {
+        max-width: 1308px;
+        margin: auto;
+        padding: 0 24px 45px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 28px;
+      }
+      .direction-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 4px 0 13px;
+      }
+      .direction-name {
+        font-size: 19px;
+        font-weight: 500;
+      }
+      .direction-index {
+        font-family: Georgia, serif;
+        font-size: 13px;
+        color: #7d8878;
+        margin-right: 8px;
+      }
+      .direction-open {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: #697961;
+      }
+      .direction-open svg {
+        width: 14px;
+        height: 14px;
+      }
+      .direction-desc {
+        margin: 0 0 16px;
+        font-size: 12px;
+        color: #6a7765;
+        line-height: 1.7;
+        min-height: 40px;
+      }
+      .swatches {
+        display: flex;
+        gap: 5px;
+      }
+      .swatches i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: block;
+      }
+      .phone {
+        height: 804px;
+        max-width: 414px;
+        width: 100%;
+        margin: auto;
+        overflow: hidden;
+        border: 1px solid #cbd0c5;
+        border-radius: 16px;
+        box-shadow: 0 12px 28px #263d3010;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 14px;
+        --paper: #f7f9f2;
+        --ink: #2a4034;
+        --muted: #788576;
+        --line: #dce2d5;
+        --accent: #355f42;
+        --tint: #e7eddc;
+        --orange: #b16c3a;
+        --serif: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      }
+      .mist {
+        --paper: #f8f8f1;
+        --ink: #2b3f33;
+        --muted: #7c8474;
+        --line: #e1e3d7;
+        --accent: #3d5f3d;
+        --tint: #e9eddf;
+        --orange: #b76835;
+        --serif: "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+      }
+      .journal {
+        --paper: #f3f1e5;
+        --ink: #3a4932;
+        --muted: #858674;
+        --line: #dbddca;
+        --accent: #4f633e;
+        --tint: #e7e9d7;
+        --orange: #aa643e;
+        --serif: "Kaiti SC", "STKaiti", "Songti SC", serif;
+      }
+      .status {
+        height: 38px;
+        flex-shrink: 0;
+        padding: 13px 23px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        font-weight: 600;
+        z-index: 2;
+      }
+      .status-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .status-icons svg {
+        width: 13px;
+        height: 13px;
+        stroke-width: 1.7;
+      }
+      .screen {
+        flex: 1;
+        overflow: auto;
+        scrollbar-width: none;
+        position: relative;
+      }
+      .screen::-webkit-scrollbar {
+        display: none;
+      }
+      .page {
+        padding: 13px 25px 22px;
+        min-height: 100%;
+        position: relative;
+      }
+      .app-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .app-heading h2 {
+        font-family: var(--serif);
+        font-size: 24px;
+        letter-spacing: 2px;
+        font-weight: 500;
+        margin: 0;
+      }
+      .app-heading small {
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 1px;
+      }
+      .eyebrow {
+        font-size: 11px;
+        letter-spacing: 1.6px;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .hero {
+        position: relative;
+        margin-bottom: 22px;
+      }
+      .landscape {
+        background-image: url("assets/mist-lake.png");
+        background-size: cover;
+        background-position: center 49%;
+        height: 113px;
+        margin: 0 -25px 22px;
+        position: relative;
+      }
+      .landscape:after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(0deg, var(--paper), transparent 55%);
+      }
+      .forest .landscape {
+        height: 90px;
+        margin-top: -7px;
+        opacity: 0.82;
+        background-position: center 43%;
+      }
+      .forest .landscape:after {
+        background: linear-gradient(0deg, var(--paper), #f7f9f280 90%);
+      }
+      .hero .money {
+        font-size: 45px;
+        font-weight: 400;
+        letter-spacing: -1.5px;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.14;
+      }
+      .money .currency {
+        font-size: 23px;
+        letter-spacing: 0;
+        margin-right: 4px;
+        font-weight: 400;
+      }
+      .money .cents {
+        font-size: 0.52em;
+        letter-spacing: -0.4px;
+      }
+      .hero-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .small-action {
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 0;
+        color: var(--accent);
+      }
+      .small-action svg {
+        width: 13px;
+        height: 13px;
+      }
+      .month-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        padding: 18px 0 22px;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 26px;
+        gap: 10px;
+      }
+      .stat-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 9px;
+      }
+      .stat-value {
+        font-size: 17px;
+        letter-spacing: -0.4px;
+        font-variant-numeric: tabular-nums;
+      }
+      .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0 0 8px;
+      }
+      .section-head h3 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 16px;
+        letter-spacing: 0.8px;
+        margin: 0;
+      }
+      .section-head small {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .transaction {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 17px 0;
+        border-bottom: 1px solid var(--line);
+        gap: 12px;
+      }
+      .transaction-main {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .tx-icon {
+        color: var(--accent);
+        width: 28px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .tx-icon svg {
+        width: 20px;
+        height: 20px;
+      }
+      .tx-name {
+        font-size: 14px;
+        margin-bottom: 5px;
+      }
+      .tx-meta {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .tx-amount {
+        font-size: 16px;
+        white-space: nowrap;
+        letter-spacing: -0.2px;
+        font-variant-numeric: tabular-nums;
+      }
+      .income {
+        color: var(--accent);
+      }
+      .bottom-note {
+        font-size: 10px;
+        color: var(--muted);
+        margin: 22px 0 0;
+        text-align: center;
+        letter-spacing: 1px;
+      }
+      .bottom-nav {
+        height: 71px;
+        flex-shrink: 0;
+        display: flex;
+        border-top: 1px solid var(--line);
+        background: var(--paper);
+        align-items: center;
+        padding: 4px 8px 7px;
+        position: relative;
+        z-index: 3;
+      }
+      .nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        color: var(--muted);
+        position: relative;
+        padding: 6px 0;
+      }
+      .nav-item svg {
+        width: 19px;
+        height: 19px;
+      }
+      .nav-item.active {
+        color: var(--accent);
+      }
+      .nav-item.active:after {
+        content: "";
+        position: absolute;
+        bottom: -4px;
+        width: 4px;
+        height: 4px;
+        background: var(--accent);
+        border-radius: 50%;
+      }
+      .nav-item.add {
+        flex: 1.08;
+      }
+      .nav-item.add .plus {
+        width: 37px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        background: var(--accent);
+        color: var(--paper);
+        border-radius: 5px;
+      }
+      .nav-item.add.active:after {
+        display: none;
+      }
+      .mist .app-heading {
+        margin-bottom: 0;
+      }
+      .mist .landscape {
+        height: 185px;
+        margin-top: 15px;
+        margin-bottom: 4px;
+        background-position: 54% 45%;
+      }
+      .mist .hero .money {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 49px;
+      }
+      .mist .hero .eyebrow {
+        margin-top: 12px;
+      }
+      .mist .month-summary {
+        margin-bottom: 23px;
+        padding-top: 17px;
+        padding-bottom: 20px;
+      }
+      .mist .section-head h3:before {
+        content: "";
+        width: 4px;
+        height: 4px;
+        background: var(--orange);
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 9px;
+      }
+      .journal .page {
+        background-image: repeating-linear-gradient(
+          0deg,
+          #7b725004 0,
+          #7b725004 1px,
+          transparent 1px,
+          transparent 4px
+        );
+      }
+      .journal .app-heading {
+        border-bottom: 1px solid var(--ink);
+        padding-bottom: 15px;
+        margin-bottom: 18px;
+      }
+      .journal .app-heading h2 {
+        font-size: 27px;
+        font-weight: 400;
+      }
+      .journal .landscape {
+        width: 105px;
+        height: 129px;
+        position: absolute;
+        right: 0;
+        top: 10px;
+        margin: 0;
+        background-position: 67% 50%;
+        border: 5px solid #e8e8d9;
+        outline: 1px solid #d1d4c3;
+        transform: rotate(2deg);
+      }
+      .journal .landscape:after {
+        display: none;
+      }
+      .journal .hero {
+        min-height: 154px;
+        padding-top: 10px;
+      }
+      .journal .hero .money {
+        font-family: Georgia, serif;
+        font-size: 36px;
+        position: relative;
+        padding-top: 5px;
+      }
+      .journal .hero .eyebrow,
+      .journal .hero .money {
+        max-width: 210px;
+      }
+      .journal .hero-foot {
+        max-width: 206px;
+        justify-content: flex-start;
+        gap: 12px;
+        margin-top: 15px;
+      }
+      .journal .month-summary {
+        border-top: 1px solid var(--ink);
+        gap: 8px;
+        padding: 18px 0;
+        margin-bottom: 25px;
+      }
+      .journal .stat-value {
+        font-family: Georgia, serif;
+        font-size: 18px;
+      }
+      .journal .section-head h3 {
+        font-size: 19px;
+      }
+      .journal .transaction {
+        padding: 18px 0;
+        border-bottom-style: dashed;
+      }
+      .journal .tx-icon {
+        width: 20px;
+      }
+      .journal .nav-item.add .plus {
+        border-radius: 1px;
+      }
+      .journal .nav-item.active {
+        color: var(--orange);
+      }
+      .journal .nav-item.active:after {
+        background: var(--orange);
+        border-radius: 0;
+        width: 13px;
+        height: 2px;
+      }
+      .page:not(.overview) .app-heading {
+        margin-bottom: 28px;
+      }
+      .backlink {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: var(--muted);
+        margin: -2px 0 17px;
+        padding: 0;
+      }
+      .backlink svg {
+        width: 15px;
+        height: 15px;
+      }
+      .settings-label {
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 1px;
+        margin: 32px 0 8px;
+      }
+      .settings-row {
+        width: 100%;
+        text-align: left;
+        padding: 21px 0;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+      .settings-row-main {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+      .settings-row .tx-icon {
+        width: 20px;
+        height: 24px;
+      }
+      .settings-row strong {
+        font-weight: 400;
+        font-size: 15px;
+      }
+      .settings-row p {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin: 7px 0 0;
+      }
+      .settings-row > svg {
+        width: 15px;
+        color: var(--muted);
+      }
+      .settings-footer {
+        margin-top: 49px;
+        text-align: center;
+        font-size: 10px;
+        color: var(--muted);
+        line-height: 2;
+      }
+      .settings-art {
+        height: 100px;
+        margin: 27px 0 0;
+        background-image: url("assets/mist-lake.png");
+        background-size: cover;
+        background-position: center 40%;
+        opacity: 0.4;
+        mask-image: linear-gradient(
+          0deg,
+          transparent,
+          #000 40%,
+          #000 60%,
+          transparent
+        );
+      }
+      .forest .settings-art {
+        height: 74px;
+        opacity: 0.24;
+      }
+      .journal .settings-art {
+        height: 98px;
+        margin-top: 24px;
+        opacity: 0.5;
+      }
+      .about-copy {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 2.1;
+        margin: 20px 0;
+      }
+      .about-brand {
+        font-family: var(--serif);
+        font-size: 36px;
+        letter-spacing: 5px;
+        margin-top: 30px;
+      }
+      .account-summary {
+        margin-bottom: 24px;
+        padding: 0 0 25px;
+        border-bottom: 1px solid var(--line);
+      }
+      .account-summary .money {
+        font-size: 42px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -1px;
+      }
+      .account-totals {
+        display: flex;
+        gap: 32px;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 15px;
+      }
+      .account-totals b {
+        font-weight: 400;
+        color: var(--ink);
+        margin-left: 6px;
+      }
+      .account-row {
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .account-symbol {
+        font-family: Georgia, serif;
+        font-size: 18px;
+        width: 28px;
+        color: var(--accent);
+        opacity: 0.75;
+      }
+      .account-name {
+        display: flex;
+        gap: 11px;
+        align-items: center;
+      }
+      .account-name p {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      .account-name small {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .account-number {
+        text-align: right;
+        font-size: 17px;
+        font-variant-numeric: tabular-nums;
+      }
+      .account-number small {
+        display: block;
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .investment-link {
+        font-size: 10px;
+        margin-top: 5px;
+        color: var(--orange);
+      }
+      .filterbar {
+        display: flex;
+        gap: 26px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 22px;
+      }
+      .filterbar button {
+        font-size: 13px;
+        padding: 0 0 12px;
+        color: var(--muted);
+      }
+      .filterbar button.active {
+        color: var(--accent);
+        border-bottom: 2px solid var(--accent);
+      }
+      .detail-summary {
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 28px;
+      }
+      .detail-date {
+        font-family: var(--serif);
+        font-size: 13px;
+        margin: 22px 0 3px;
+        color: var(--muted);
+      }
+      .entry-types {
+        display: flex;
+        gap: 27px;
+        font-size: 13px;
+        margin-bottom: 29px;
+      }
+      .entry-types button {
+        color: var(--muted);
+        padding: 0 0 8px;
+      }
+      .entry-types button.active {
+        color: var(--accent);
+        border-bottom: 2px solid var(--accent);
+      }
+      .amount-input {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+        margin-bottom: 26px;
+      }
+      .amount-input > span {
+        font-size: 24px;
+      }
+      .amount-input input {
+        width: 100%;
+        font-size: 49px;
+        font-weight: 400;
+        color: var(--ink);
+        letter-spacing: -1px;
+        border: 0;
+        background: none;
+        outline: none;
+        padding: 0;
+        font-variant-numeric: tabular-nums;
+        min-width: 0;
+      }
+      .mist .amount-input input,
+      .journal .amount-input input {
+        font-family: Georgia, serif;
+      }
+      .entry-line {
+        min-height: 49px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        gap: 10px;
+        font-size: 13px;
+      }
+      .entry-line label {
+        color: var(--muted);
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      .entry-line button {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 12px;
+        padding: 7px 0;
+      }
+      .entry-line button svg {
+        width: 13px;
+        height: 13px;
+      }
+      .entry-line input {
+        background: none;
+        border: 0;
+        color: var(--ink);
+        text-align: right;
+        outline: none;
+        width: 70%;
+        font-size: 12px;
+      }
+      .tags-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 20px 0 12px;
+      }
+      .tags {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .tags button {
+        font-size: 11px;
+        padding: 7px 12px;
+        background: var(--tint);
+        color: var(--muted);
+        border-radius: 3px;
+      }
+      .tags button.active {
+        color: var(--paper);
+        background: var(--accent);
+      }
+      .keypad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        margin-top: 25px;
+      }
+      .keypad button {
+        font-size: 23px;
+        height: 42px;
+        font-weight: 300;
+      }
+      .keypad button svg {
+        width: 22px;
+        margin: auto;
+      }
+      .save {
+        width: 100%;
+        height: 43px;
+        margin-top: 13px;
+        border-radius: 4px;
+        background: var(--accent);
+        color: var(--paper);
+        font-size: 13px;
+        letter-spacing: 3px;
+      }
+      .entry-note {
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 10px;
+      }
+      .mist .entry-types,
+      .mist .amount-input {
+        margin-bottom: 25px;
+      }
+      .journal .save {
+        border-radius: 0;
+      }
+      .journal .tags button {
+        border-radius: 0;
+      }
+      .subpage .tags {
+        margin: 20px 0;
+      }
+      .subpage .settings-row p {
+        max-width: 220px;
+      }
+      .backup-warning {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.9;
+        margin-top: 25px;
+      }
+      .toast {
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        bottom: 90px;
+        background: #2e4638;
+        color: #fff;
+        padding: 12px 14px;
+        border-radius: 4px;
+        font-size: 12px;
+        line-height: 1.7;
+        z-index: 20;
+        box-shadow: 0 4px 18px #0002;
+      }
+      .design-notes {
+        padding: 19px 0;
+        color: #73806b;
+        font-size: 11px;
+        line-height: 1.9;
+      }
+      .design-notes strong {
+        font-weight: 500;
+        color: #42593d;
+      }
+      .focus .comparison {
+        grid-template-columns: minmax(320px, 430px) minmax(300px, 440px);
+        justify-content: center;
+        gap: 70px;
+      }
+      .focus .direction:not(.selected) {
+        display: none;
+      }
+      .focus .phone {
+        height: 804px;
+      }
+      .focus-note {
+        display: none;
+        padding-top: 99px;
+      }
+      .focus .focus-note {
+        display: block;
+      }
+      .focus-note .note-number {
+        font:
+          italic 74px Georgia,
+          serif;
+        color: #b7c3ae;
+      }
+      .focus-note h2 {
+        font-family: "Songti SC", serif;
+        font-size: 30px;
+        font-weight: 400;
+        letter-spacing: 3px;
+        margin: 12px 0 20px;
+      }
+      .focus-note p {
+        font-size: 14px;
+        line-height: 2;
+        color: #63725c;
+      }
+      .focus-note dl {
+        border-top: 1px solid #c7d0c0;
+        padding: 12px 0;
+        font-size: 13px;
+        line-height: 2;
+      }
+      .focus-note dt {
+        color: #3e583b;
+        margin-top: 18px;
+      }
+      .focus-note dd {
+        margin: 3px 0;
+        color: #75816e;
+      }
+      .recommendation {
+        font-size: 10px;
+        letter-spacing: 1px;
+        color: #9c643d;
+        margin-left: 8px;
+      }
+      .desktop-shell {
+        max-width: 1260px;
+        margin: 0 auto 45px;
+        padding: 0 24px;
+        display: none;
+      }
+      .desktop .comparison {
+        display: none;
+      }
+      .desktop .desktop-shell {
+        display: block;
+      }
+      .desktop-picker {
+        display: flex;
+        gap: 22px;
+        margin-bottom: 16px;
+      }
+      .desktop-picker button {
+        padding: 5px 0 8px;
+        font-size: 12px;
+        color: #79836e;
+      }
+      .desktop-picker button[aria-pressed="true"] {
+        color: #30513a;
+        border-bottom: 1px solid #30513a;
+      }
+      .desktop-app {
+        height: 760px;
+        max-width: none;
+        border-radius: 7px;
+        display: grid;
+        grid-template-columns: 175px 1fr;
+        box-shadow: 0 10px 28px #263d3010;
+      }
+      .desktop-sidebar {
+        padding: 37px 23px;
+        background: var(--tint);
+        display: flex;
+        flex-direction: column;
+      }
+      .desktop-sidebar .brand {
+        font-family: var(--serif);
+        font-size: 26px;
+        letter-spacing: 4px;
+        margin: 0 0 48px;
+      }
+      .desktop-sidebar button {
+        display: flex;
+        gap: 13px;
+        align-items: center;
+        font-size: 13px;
+        text-align: left;
+        color: var(--muted);
+        padding: 14px 9px;
+        margin-bottom: 8px;
+      }
+      .desktop-sidebar button.active {
+        color: var(--accent);
+        background: #ffffff80;
+      }
+      .desktop-sidebar .sidebar-footer {
+        margin-top: auto;
+        font-size: 10px;
+        color: var(--muted);
+        line-height: 2;
+      }
+      .desktop-main {
+        min-width: 0;
+        overflow: auto;
+      }
+      .desktop-main > .page {
+        padding: 32px 37px;
+      }
+      .desktop-main .app-heading {
+        margin-bottom: 25px;
+      }
+      .desktop-main .overview {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr;
+        column-gap: 38px;
+        align-content: start;
+      }
+      .desktop-main .overview .app-heading {
+        grid-column: 1/-1;
+      }
+      .desktop-main .hero {
+        grid-column: 1;
+        min-height: 345px;
+        margin: 0;
+      }
+      .desktop-main .landscape {
+        height: 178px;
+        margin: 0 0 25px;
+      }
+      .desktop-main .hero .money {
+        font-size: 48px;
+      }
+      .desktop-main .month-summary {
+        grid-column: 2;
+        grid-row: 2;
+        align-self: start;
+        border-top: 0;
+        padding-top: 10px;
+        margin: 0;
+      }
+      .desktop-main .recent-section {
+        grid-column: 2;
+        grid-row: 2;
+        margin-top: 125px;
+      }
+      .desktop-main .bottom-note {
+        grid-column: 1/-1;
+        align-self: end;
+        margin-top: 35px;
+      }
+      .desktop-main .journal .landscape {
+        position: relative;
+        width: 100%;
+        height: 178px;
+        top: 0;
+        right: 0;
+        transform: rotate(-1deg);
+        margin-bottom: 28px;
+      }
+      .desktop-main .journal .hero .money {
+        max-width: none;
+      }
+      .desktop-main .journal .hero {
+        padding-top: 0;
+      }
+      .desktop-main .journal .hero .eyebrow {
+        max-width: none;
+      }
+      .desktop-main .journal .hero-foot {
+        max-width: none;
+      }
+      .desktop-main .entry {
+        max-width: 550px;
+        margin: auto;
+      }
+      .desktop-main .assets {
+        max-width: 720px;
+        margin: auto;
+      }
+      .desktop-main .settings,
+      .desktop-main .subpage {
+        max-width: 650px;
+        margin: auto;
+      }
+      .desktop-main .details {
+        max-width: 730px;
+        margin: auto;
+      }
+      .desktop-main .settings-art {
+        height: 130px;
+      }
+      .desktop-main .toast {
+        position: sticky;
+        bottom: 30px;
+        margin: 0 35px;
+      }
+      .studio-footer {
+        max-width: 1260px;
+        margin: 0 auto 30px;
+        padding: 18px 0;
+        border-top: 1px solid #cdd4c8;
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #73806b;
+        line-height: 1.8;
+      }
+      .demo-dialog {
+        border: 1px solid #c4cfb8;
+        background: #f8f9f3;
+        color: #344b39;
+        max-width: 420px;
+        width: calc(100% - 36px);
+        padding: 25px;
+      }
+      .demo-dialog::backdrop {
+        background: #1d302e55;
+      }
+      .demo-dialog h3 {
+        font-weight: 500;
+        font-size: 19px;
+        margin: 0 0 15px;
+      }
+      .demo-dialog p {
+        font-size: 13px;
+        line-height: 1.9;
+        color: #74826d;
+      }
+      .demo-dialog button {
+        padding: 10px 18px;
+        color: #fff;
+        background: #3c6043;
+        float: right;
+        border-radius: 3px;
+      }
+      @media (min-width: 1700px) {
+        .phone {
+          height: 844px;
+        }
+        .comparison {
+          gap: 38px;
+        }
+      }
+      @media (max-width: 1050px) {
+        .comparison {
+          gap: 18px;
+          padding: 0 18px 30px;
+        }
+        .phone {
+          font-size: 13px;
+        }
+        .page {
+          padding-left: 19px;
+          padding-right: 19px;
+        }
+        .landscape {
+          margin-left: -19px;
+          margin-right: -19px;
+        }
+        .hero .money {
+          font-size: 38px;
+        }
+        .mist .hero .money {
+          font-size: 42px;
+        }
+        .journal .hero .money {
+          font-size: 32px;
+        }
+        .journal .landscape {
+          width: 83px;
+          height: 115px;
+        }
+        .journal .hero .eyebrow,
+        .journal .hero .money {
+          max-width: 185px;
+        }
+        .stat-value {
+          font-size: 15px;
+        }
+        .direction-desc {
+          font-size: 11px;
+        }
+        .phone {
+          height: 804px;
+        }
+        .studio-footer {
+          margin-left: 24px;
+          margin-right: 24px;
+        }
+      }
+      @media (max-width: 760px) {
+        header.studio {
+          padding-top: 20px;
+        }
+        .studio-top .caption {
+          display: none;
+        }
+        .intro {
+          display: block;
+        }
+        .intro h1 {
+          font-size: 22px;
+        }
+        .intro p {
+          font-size: 12px;
+        }
+        .view-controls {
+          display: inline-flex;
+          margin-top: 15px;
+        }
+        .toolbar {
+          align-items: start;
+          flex-direction: column;
+          gap: 7px;
+        }
+        .page-controls {
+          width: 100%;
+          justify-content: space-between;
+          gap: 0;
+        }
+        .page-controls button {
+          padding: 8px 11px;
+        }
+        .comparison {
+          display: block;
+          padding: 0 20px;
+        }
+        .direction {
+          max-width: 414px;
+          margin: 0 auto 32px;
+        }
+        .phone {
+          height: 804px;
+        }
+        .page {
+          padding-left: 25px;
+          padding-right: 25px;
+        }
+        .landscape {
+          margin-left: -25px;
+          margin-right: -25px;
+        }
+        .hero .money {
+          font-size: 45px;
+        }
+        .mist .hero .money {
+          font-size: 49px;
+        }
+        .journal .hero .money {
+          font-size: 36px;
+        }
+        .journal .landscape {
+          width: 105px;
+          height: 129px;
+        }
+        .stat-value {
+          font-size: 17px;
+        }
+        .direction-desc {
+          min-height: 0;
+        }
+        .focus .comparison {
+          display: block;
+        }
+        .focus-note {
+          max-width: 414px;
+          margin: auto;
+          padding: 0 0 30px;
+        }
+        .focus-note .note-number {
+          display: none;
+        }
+        .desktop-shell {
+          overflow-x: auto;
+          padding: 0 20px;
+        }
+        .desktop-app {
+          width: 1040px;
+          grid-template-columns: 160px 1fr;
+        }
+        .desktop .desktop-shell:before {
+          content: "桌面稿可横向滑动查看";
+          display: block;
+          font-size: 11px;
+          color: #73806b;
+          margin-bottom: 12px;
+        }
+        .studio-footer {
+          flex-direction: column;
+          gap: 6px;
+        }
+        .wordmark span {
+          margin-left: 8px;
+          font-size: 10px;
+        }
+      }
+      /* Whole-interface treatments: typography, fields, rows, navigation and sheets. */
+      .phone button {
+        -webkit-tap-highlight-color: transparent;
+      }
+      .phone button:active {
+        opacity: 0.65;
+      }
+      .page {
+        isolation: isolate;
+      }
+      .forest .filterbar {
+        gap: 30px;
+      }
+      .forest .amount-input {
+        padding-bottom: 17px;
+        border-bottom: 1px solid var(--ink);
+      }
+      .forest .entry-line {
+        min-height: 53px;
+      }
+      .forest .tags button {
+        background: none;
+        border: 1px solid transparent;
+        border-bottom-color: var(--line);
+        border-radius: 0;
+        padding: 7px 9px;
+      }
+      .forest .tags button.active {
+        background: none;
+        border-bottom-color: var(--accent);
+        color: var(--accent);
+      }
+      .forest .save {
+        border-radius: 2px;
+      }
+      .forest .account-group-title {
+        font-size: 10px;
+        color: var(--muted);
+        margin: 17px 0 0;
+        letter-spacing: 1px;
+      }
+      .forest .account-row {
+        padding: 12px 0;
+      }
+      .forest .account-summary {
+        margin-bottom: 19px;
+        padding-bottom: 19px;
+      }
+      .forest .settings-row {
+        padding: 24px 0;
+      }
+      .forest .settings-row p {
+        margin-top: 6px;
+      }
+      .mist .app-heading h2 {
+        letter-spacing: 3px;
+      }
+      .mist .page:not(.overview) .app-heading {
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 23px;
+        position: relative;
+      }
+      .mist .page:not(.overview) .app-heading:after {
+        content: "";
+        width: 16px;
+        height: 2px;
+        background: var(--orange);
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        transform: rotate(-4deg);
+      }
+      .mist .landscape {
+        height: 150px;
+      }
+      .mist .bottom-nav {
+        background: #e9eddf;
+        border-top-color: #d5deca;
+      }
+      .mist .nav-item.active:after {
+        width: 13px;
+        height: 2px;
+        border-radius: 0;
+        background: var(--orange);
+        transform: rotate(-5deg);
+      }
+      .mist .nav-item.add .plus {
+        border-radius: 1px;
+        clip-path: polygon(3% 3%, 97% 0, 100% 96%, 0 100%);
+      }
+      .mist .entry-types {
+        margin-bottom: 18px;
+        gap: 33px;
+      }
+      .mist .entry-types button.active {
+        border-bottom: 0;
+        position: relative;
+      }
+      .mist .entry-types button.active:after {
+        content: "";
+        height: 4px;
+        width: 25px;
+        background: #b6c696;
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        transform: rotate(-4deg);
+        opacity: 0.7;
+      }
+      .mist .amount-input {
+        background: linear-gradient(110deg, #e3e9d4, #f0f1e5);
+        margin: 0 -7px 16px;
+        padding: 18px 17px;
+        clip-path: polygon(0 3%, 99% 0, 100% 94%, 70% 100%, 33% 97%, 1% 100%);
+      }
+      .mist .amount-input input {
+        font-size: 46px;
+      }
+      .mist .entry-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 22px;
+      }
+      .mist .entry-fields .entry-line {
+        display: block;
+        padding: 8px 0 9px;
+        min-height: 66px;
+      }
+      .mist .entry-fields .entry-line label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 10px;
+      }
+      .mist .entry-fields .entry-line button {
+        padding: 3px 0 0;
+        width: 100%;
+        justify-content: space-between;
+        font-size: 12px;
+      }
+      .mist .entry-fields .entry-line:last-child {
+        grid-column: 1 / -1;
+        min-height: 47px;
+        display: flex;
+        align-items: center;
+        padding: 11px 0;
+      }
+      .mist .entry-fields .entry-line:last-child label {
+        margin: 0;
+      }
+      .mist .entry-fields .entry-line input {
+        text-align: left;
+        padding-left: 15px;
+        width: 90%;
+      }
+      .mist .tags-label {
+        margin-top: 18px;
+      }
+      .mist .tags button {
+        border-radius: 1px;
+        background: #e8ecdd;
+        padding: 7px 13px;
+      }
+      .mist .tags button.active {
+        background: #dce5ca;
+        color: var(--accent);
+        box-shadow: inset 0 -2px #a6b98b;
+      }
+      .mist .keypad {
+        margin-top: 18px;
+        padding-top: 7px;
+        border-top: 1px solid var(--line);
+      }
+      .mist .keypad button {
+        height: 40px;
+        font-family: Georgia, serif;
+        font-size: 25px;
+      }
+      .mist .save {
+        border-radius: 0;
+        clip-path: polygon(1% 5%, 98% 0, 100% 95%, 68% 100%, 32% 97%, 0 100%);
+        letter-spacing: 4px;
+      }
+      .mist .account-summary {
+        margin: -4px -7px 22px;
+        padding: 19px 17px 20px;
+        background: linear-gradient(115deg, #e7ecda, #f0f1e6);
+        border: 0;
+        clip-path: polygon(0 0, 100% 2%, 99% 98%, 62% 100%, 0 97%);
+      }
+      .mist .account-summary .money {
+        font-family: Georgia, serif;
+        font-size: 41px;
+      }
+      .mist .account-totals {
+        margin-top: 17px;
+        gap: 21px;
+        font-size: 10px;
+      }
+      .account-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 23px;
+        margin-top: 10px;
+      }
+      .account-tile {
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        padding: 17px 0;
+      }
+      .account-tile .account-title {
+        font-size: 12px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 11px;
+      }
+      .account-tile .account-value {
+        font-family: Georgia, serif;
+        font-size: 23px;
+        letter-spacing: -0.5px;
+      }
+      .account-tile .account-foot {
+        color: var(--muted);
+        font-size: 10px;
+        display: block;
+        margin-top: 8px;
+      }
+      .mist .account-row {
+        padding: 16px 0;
+      }
+      .mist .account-row .account-symbol {
+        display: none;
+      }
+      .mist .account-number {
+        font-family: Georgia, serif;
+        font-size: 21px;
+      }
+      .mist .account-group-title {
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 1px;
+        margin-top: 23px;
+      }
+      .details-sums {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 22px;
+        margin: 3px 0 27px;
+      }
+      .details-sums small {
+        color: var(--muted);
+        font-size: 11px;
+        display: block;
+        margin-bottom: 9px;
+      }
+      .details-sums b {
+        font-family: Georgia, serif;
+        font-size: 27px;
+        font-weight: 400;
+      }
+      .mist .filterbar {
+        margin-bottom: 18px;
+        gap: 31px;
+      }
+      .mist .filterbar button.active {
+        border-bottom-color: #a9b98f;
+      }
+      .day-group {
+        display: grid;
+        grid-template-columns: 39px 1fr;
+        gap: 14px;
+        margin-top: 21px;
+      }
+      .day-marker {
+        color: var(--muted);
+        font-size: 10px;
+        padding-top: 8px;
+      }
+      .day-marker strong {
+        font:
+          28px Georgia,
+          serif;
+        display: block;
+        margin-bottom: 5px;
+        color: var(--ink);
+      }
+      .day-group .transaction {
+        padding: 13px 0 18px;
+      }
+      .day-group .transaction + .transaction {
+        padding-top: 18px;
+      }
+      .day-group .tx-icon {
+        display: none;
+      }
+      .day-group .tx-amount {
+        font-family: Georgia, serif;
+        font-size: 18px;
+      }
+      .mist .settings-label {
+        letter-spacing: 2px;
+        font-size: 10px;
+        margin-top: 24px;
+      }
+      .mist .settings-row {
+        padding: 25px 0;
+        border-bottom-color: #d9dfcb;
+      }
+      .mist .settings-row strong {
+        font-family: var(--serif);
+        font-size: 18px;
+        letter-spacing: 1px;
+      }
+      .mist .settings-row p {
+        font-size: 11px;
+        margin-top: 7px;
+      }
+      .mist .settings-row .tx-icon {
+        color: #6d805b;
+      }
+      .settings-seal {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 11px;
+        margin-top: 39px;
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: 1px;
+      }
+      .settings-seal svg {
+        width: 33px;
+        height: 30px;
+        color: #9aa886;
+      }
+      .setting-no {
+        display: none;
+      }
+      .journal .settings-label {
+        display: none;
+      }
+      .journal .settings-row {
+        padding: 26px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .journal .settings-row-main {
+        gap: 17px;
+      }
+      .journal .settings-row .tx-icon {
+        display: none;
+      }
+      .journal .setting-no {
+        display: block;
+        font:
+          italic 22px Georgia,
+          serif;
+        color: #a7ad91;
+        width: 28px;
+      }
+      .journal .settings-row strong {
+        font-family: var(--serif);
+        font-size: 19px;
+      }
+      .journal .settings-footer {
+        padding-top: 18px;
+        border-top: 1px solid var(--ink);
+        text-align: left;
+        margin-top: 43px;
+      }
+      .journal .settings-seal {
+        justify-content: flex-start;
+        margin-top: 29px;
+      }
+      .journal .entry-types {
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 4px;
+      }
+      .journal .entry-types button.active {
+        color: var(--orange);
+        border-bottom-color: var(--orange);
+      }
+      .journal .amount-input {
+        padding: 6px 0 17px;
+        border-bottom: 1px solid var(--ink);
+        margin-bottom: 14px;
+      }
+      .journal .entry-line {
+        border-bottom-style: dashed;
+        min-height: 54px;
+      }
+      .journal .entry-line label {
+        font-family: var(--serif);
+        font-size: 14px;
+      }
+      .journal .tags button {
+        background: none;
+        padding: 5px 9px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+      }
+      .journal .tags button.active {
+        color: var(--orange);
+        background: none;
+        border-bottom-color: var(--orange);
+      }
+      .journal .keypad {
+        border-top: 1px solid var(--line);
+        padding-top: 6px;
+        margin-top: 22px;
+      }
+      .journal .keypad button {
+        font-family: Georgia, serif;
+        font-size: 25px;
+      }
+      .journal .save {
+        font-family: var(--serif);
+        font-size: 17px;
+        letter-spacing: 5px;
+      }
+      .journal .account-summary {
+        margin-bottom: 22px;
+        padding-bottom: 23px;
+        border-bottom-color: var(--ink);
+      }
+      .journal .account-summary .money {
+        font-family: Georgia, serif;
+      }
+      .account-table-head {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+        padding: 15px 0 12px;
+      }
+      .journal .account-row {
+        padding: 19px 0;
+        border-bottom-style: dashed;
+      }
+      .journal .account-number {
+        font-family: Georgia, serif;
+        font-size: 20px;
+      }
+      .journal .account-symbol {
+        font-style: italic;
+        font-size: 13px;
+        color: #a5ac91;
+        width: 22px;
+      }
+      .journal .account-name p {
+        font-family: var(--serif);
+        font-size: 16px;
+      }
+      .journal .filterbar button.active {
+        color: var(--orange);
+        border-color: var(--orange);
+      }
+      .transaction-table-head,
+      .transaction-table-row {
+        display: grid;
+        grid-template-columns: 43px 1fr auto;
+        gap: 12px;
+      }
+      .transaction-table-head {
+        font-size: 10px;
+        color: var(--muted);
+        padding: 0 0 12px;
+        border-bottom: 1px solid var(--ink);
+      }
+      .transaction-table-row {
+        padding: 21px 0;
+        border-bottom: 1px dashed var(--line);
+        align-items: center;
+      }
+      .transaction-table-row time {
+        font:
+          11px Georgia,
+          serif;
+        color: var(--muted);
+      }
+      .transaction-table-row .tx-name {
+        font-family: var(--serif);
+        font-size: 16px;
+      }
+      .transaction-table-row .tx-amount {
+        font-family: Georgia, serif;
+        font-size: 17px;
+      }
+      .journal .details-sums {
+        margin-top: 25px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 25px;
+      }
+      .journal .details-sums b {
+        font-size: 25px;
+      }
+      .sheet-shade {
+        position: absolute;
+        inset: 0;
+        background: #24352855;
+        z-index: 25;
+        width: 100%;
+      }
+      .operation-sheet {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 26;
+        padding: 24px 25px 28px;
+        background: var(--paper);
+        box-shadow: 0 -10px 35px #1b312313;
+        border-radius: 12px 12px 0 0;
+        max-height: 90%;
+        overflow: auto;
+      }
+      .sheet-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 10px;
+      }
+      .sheet-heading h3 {
+        font-size: 18px;
+        font-weight: 500;
+        margin: 0;
+      }
+      .sheet-close {
+        font-size: 23px;
+        font-weight: 300;
+        color: var(--muted);
+        padding: 0 3px;
+      }
+      .sheet-subtitle {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.8;
+        margin: 0 0 24px;
+      }
+      .sheet-account {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .sheet-account strong {
+        display: block;
+        font-size: 14px;
+        font-weight: 400;
+        margin-bottom: 6px;
+      }
+      .sheet-account small {
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .sheet-account .check {
+        width: 18px;
+        height: 18px;
+        border: 1px solid #b8c5ad;
+        border-radius: 50%;
+        color: var(--accent);
+        font-size: 12px;
+        text-align: center;
+        line-height: 17px;
+      }
+      .sheet-account[aria-pressed="true"] .check {
+        color: var(--paper);
+        border-color: var(--accent);
+        background: var(--accent);
+      }
+      .sheet-field {
+        display: block;
+        padding: 15px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .sheet-field input {
+        display: block;
+        width: 100%;
+        border: 0;
+        outline: 0;
+        padding: 10px 0 0;
+        color: var(--ink);
+        background: none;
+        font-size: 19px;
+      }
+      .sheet-field input.numeric {
+        font-size: 33px;
+        font-variant-numeric: tabular-nums;
+      }
+      .sheet-actions {
+        margin-top: 22px;
+        display: flex;
+        gap: 12px;
+      }
+      .sheet-actions button {
+        min-height: 43px;
+        flex: 1;
+        background: var(--accent);
+        color: var(--paper);
+        font-size: 13px;
+        border-radius: 3px;
+      }
+      .sheet-actions .secondary {
+        background: var(--tint);
+        color: var(--ink);
+      }
+      .sheet-caption {
+        font-size: 10px;
+        color: var(--muted);
+        line-height: 1.8;
+        margin-top: 17px;
+      }
+      .mist .operation-sheet {
+        border-radius: 1px 1px 0 0;
+        border-top: 3px solid #bccb9f;
+        background: linear-gradient(135deg, #f9f9f0, #f1f3e6);
+      }
+      .mist .sheet-heading h3 {
+        font-family: var(--serif);
+        font-size: 22px;
+        letter-spacing: 2px;
+      }
+      .mist .sheet-account[aria-pressed="true"] {
+        background: #e4ebd544;
+      }
+      .mist .sheet-account .check {
+        border-radius: 1px;
+      }
+      .mist .sheet-actions button {
+        border-radius: 0;
+        clip-path: polygon(1% 3%, 99% 0, 100% 96%, 3% 100%, 0 94%);
+      }
+      .journal .operation-sheet {
+        border-radius: 0;
+        border-top: 1px solid var(--ink);
+      }
+      .journal .sheet-heading {
+        padding-bottom: 13px;
+        border-bottom: 1px solid var(--line);
+      }
+      .journal .sheet-heading h3 {
+        font-family: var(--serif);
+        font-size: 23px;
+        letter-spacing: 3px;
+      }
+      .journal .sheet-account {
+        border-bottom-style: dashed;
+      }
+      .journal .sheet-account strong,
+      .journal .sheet-field input {
+        font-family: var(--serif);
+      }
+      .journal .sheet-account .check {
+        border-radius: 0;
+      }
+      .journal .sheet-actions button {
+        border-radius: 0;
+        font-family: var(--serif);
+        font-size: 16px;
+        letter-spacing: 3px;
+      }
+      .journal .sheet-field {
+        border-bottom-style: dashed;
+      }
+      .desktop-app .operation-sheet {
+        bottom: auto;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+        width: 410px;
+        max-height: 90%;
+        border-radius: 3px;
+        padding: 28px;
+      }
+      .desktop-main .account-grid {
+        gap: 0 40px;
+      }
+      .desktop-main .mist .entry-fields {
+        gap: 0 30px;
+      }
+      .forest .entry .app-heading,
+      .journal .entry .app-heading {
+        margin-bottom: 19px;
+      }
+      .forest .entry-types {
+        margin-bottom: 18px;
+      }
+      .forest .amount-input {
+        margin-bottom: 15px;
+      }
+      .forest .entry-line {
+        min-height: 47px;
+      }
+      .forest .keypad {
+        margin-top: 15px;
+      }
+      .forest .keypad button,
+      .journal .keypad button {
+        height: 35px;
+      }
+      .journal .keypad {
+        margin-top: 16px;
+      }
+      .journal .assets .account-row {
+        padding-top: 13px;
+        padding-bottom: 13px;
+      }
+      @media (max-width: 400px) {
+        .journal .landscape {
+          width: 83px;
+          height: 112px;
+        }
+        .journal .hero .money {
+          font-size: 30px;
+        }
+        .journal .hero-foot {
+          font-size: 9px;
+          max-width: 181px;
+        }
+      }
+      .nav-preview-controls {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: #71806e;
+      }
+      .nav-preview-controls span {
+        margin-right: 6px;
+      }
+      .nav-preview-controls button {
+        padding: 7px 10px;
+        color: #71806e;
+      }
+      .nav-preview-controls button[aria-pressed="true"] {
+        color: #254c36;
+        background: #d8e0d3;
+        border-radius: 3px;
+      }
+      .floating-nav .phone:not(.desktop-app) .bottom-nav {
+        position: absolute;
+        left: 13px;
+        right: 13px;
+        bottom: 14px;
+        height: 65px;
+        width: auto;
+        border: 1px solid #bdc9b540;
+        border-radius: 15px;
+        background: #f8f9f2f2;
+        box-shadow:
+          0 6px 22px #203b2414,
+          0 1px 4px #203b2408;
+        backdrop-filter: blur(12px);
+        padding: 4px 6px 6px;
+      }
+      .floating-nav .phone.mist:not(.desktop-app) .bottom-nav {
+        background: #eef1e4f5;
+        border-color: #cbd5bc70;
+        border-radius: 13px;
+      }
+      .floating-nav .phone.journal:not(.desktop-app) .bottom-nav {
+        background: #f3f1e5f5;
+        border-radius: 7px;
+        border-color: #c9cfb870;
+        box-shadow: 0 4px 14px #38452e12;
+      }
+      .floating-nav .phone:not(.desktop-app) .screen {
+        padding-bottom: 90px;
+      }
+      .floating-nav .phone:not(.desktop-app) .nav-item.active:after {
+        bottom: -3px;
+      }
+      .desktop .nav-preview-controls {
+        opacity: 0.45;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="studio">
+      <div class="studio-top">
+        <div class="wordmark">简账 <span>VISUAL STUDIES / 01</span></div>
+        <div class="caption">自然、清新，留一点绘画的温度。</div>
+      </div>
+      <div class="intro">
+        <div>
+          <h1>把日常，记在一片绿意里。</h1>
+          <p>三种自然系方向 · 同一份账本内容 · 先选感觉，再细化界面</p>
+        </div>
+        <div class="view-controls">
+          <button data-mode="compare" aria-pressed="true">并排比较</button
+          ><button data-mode="focus" aria-pressed="false">单独看</button
+          ><button data-mode="desktop" aria-pressed="false">桌面效果</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <nav class="page-controls" aria-label="切换所有方案页面"></nav>
+        <nav class="nav-preview-controls" aria-label="底栏效果">
+          <span>底栏</span
+          ><button data-nav-mode="docked" aria-pressed="true">贴底</button
+          ><button data-nav-mode="floating" aria-pressed="false">悬浮</button>
+        </nav>
+        <span class="caption"
+          >可点击底部导航体验 · 全部为虚构数据，操作不会保存</span
+        >
+      </div>
+    </header>
+    <main class="comparison" id="comparison"></main>
+    <section class="desktop-shell">
+      <nav class="desktop-picker" aria-label="选择桌面风格"></nav>
+      <div id="desktop"></div>
+    </section>
+    <footer class="studio-footer">
+      <span
+        >视觉探索稿 · 2026.10<br />风景为原创生成素材，未使用参考截图中的游戏素材。</span
+      ><span
+        >用排版、间距和细线建立层级<br />金额与操作保持清晰，风景只做适量点缀</span
+      >
+    </footer>
+    <dialog class="demo-dialog">
+      <h3 id="dialog-title">视觉稿</h3>
+      <p id="dialog-copy"></p>
+      <button onclick="this.closest('dialog').close()">知道了</button>
+    </dialog>
+    <script>
+      const paths = {
+        overview: '<path d="M3 10 12 3l9 7v10H3Z"/><path d="M9 20v-7h6v7"/>',
+        details: '<path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/>',
+        entry: '<path d="M12 4v16M4 12h16"/>',
+        assets: '<path d="M3 7h18v13H3zM3 7l14-4v4M16 12h5v5h-5z"/>',
+        settings: '<path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M9 15v6"/>',
+        chevron: '<path d="m9 5 7 7-7 7"/>',
+        back: '<path d="m15 5-7 7 7 7"/>',
+        arrow: '<path d="M5 12h14m-5-5 5 5-5 5"/>',
+        food: '<path d="M6 3v7m-3-7v4a3 3 0 0 0 6 0V3M6 10v11M17 3c-3 4-3 9 1 9h1V3Zm2 9v9"/>',
+        train:
+          '<rect x="5" y="3" width="14" height="15" rx="3"/><path d="M5 11h14M8 21l2-3m6 3-2-3M9 14h.01M15 14h.01"/>',
+        salary: '<path d="M4 6h16v14H4zM8 6V3h8v3M4 11h16M10 11v3h4v-3"/>',
+        tag: '<path d="M3 4h8l10 10-7 7L3 10Z"/><circle cx="7" cy="8" r="1"/>',
+        backup: '<path d="M12 3v12m-4-4 4 4 4-4M4 15v6h16v-6"/>',
+        history: '<path d="M3 10a9 9 0 1 1 1 7M3 4v6h6M12 7v6l4 2"/>',
+        info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+        delete: '<path d="m9 5-7 7 7 7h12V5ZM11 9l6 6m0-6-6 6"/>',
+        signal: '<path d="M3 12v7M8 9v10M13 6v13M18 3v16"/>',
+        wifi: '<path d="M2 7a16 16 0 0 1 20 0M5 11a11 11 0 0 1 14 0M9 15a5 5 0 0 1 6 0M12 19h.01"/>',
+        battery:
+          '<rect x="2" y="6" width="17" height="12" rx="2"/><path d="M22 10v4M5 9h10v6H5z"/>',
+      };
+      const icon = (n) =>
+        `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[n] || paths.info}</svg>`;
+      const pages = [
+        ["overview", "总览"],
+        ["details", "明细"],
+        ["entry", "记一笔"],
+        ["assets", "资产"],
+        ["settings", "设置"],
+      ];
+      const directions = [
+        {
+          id: "forest",
+          number: "01",
+          name: "林间留白",
+          short: "更轻的绿意，干净的日常工具。",
+          desc: "浅绿底色与充足留白，风景退到页首。少量细线组织信息，数字清楚，操作轻快。",
+          palette: ["#f7f9f2", "#dce5cd", "#355f42", "#b16c3a"],
+          type: "现代无衬线 / 明确的数字层级",
+          art: "轻淡的页首风景，只占一小条",
+          fit: "喜欢清爽，想每天快速记两笔。",
+          caution: "绘画感最克制，长时间使用更安静。",
+        },
+        {
+          id: "mist",
+          number: "02",
+          name: "雾岸油画",
+          short: "把一幅安静的风景，放进账本。",
+          desc: "灰白雾气、苔绿树影和一点橙色。油画只留在总览，其他页面像翻到干净的内页。",
+          palette: ["#f8f8f1", "#bac3a3", "#3d5f3d", "#c57a37"],
+          type: "宋体标题 / 衬线大数字 / 清晰正文",
+          art: "总览有一幅横向风景，内页保持克制",
+          fit: "最接近你给的背景，兼顾气氛与实用。",
+          caution: "推荐从这套继续，风景高度还可以调低。",
+        },
+        {
+          id: "journal",
+          number: "03",
+          name: "森绿手账",
+          short: "有一点纸感，也有一点生活痕迹。",
+          desc: "米色纸张、橄榄绿墨色、小幅风景插页。略带手账感的标题和直角细线，更温暖随意。",
+          palette: ["#f3f1e5", "#d8ddc4", "#4f633e", "#aa643e"],
+          type: "手账感标题 / 衬线数字 / 简洁正文",
+          art: "小幅斜放的风景，像夹进账本的明信片",
+          fit: "喜欢纸本、温暖，不追求强烈的科技感。",
+          caution: "个性最明显，正文仍保持标准字体易读。",
+        },
+      ];
+      const state = {
+        mode: "compare",
+        navMode: "docked",
+        selected: "mist",
+        page: "overview",
+        screens: Object.fromEntries(
+          directions.map((d) => [
+            d.id,
+            {
+              page: "overview",
+              sub: null,
+              filter: "all",
+              kind: "支出",
+              tag: "餐饮",
+              amount: "28.00",
+            },
+          ]),
+        ),
+        desktop: {
+          page: "overview",
+          sub: null,
+          filter: "all",
+          kind: "支出",
+          tag: "餐饮",
+          amount: "28.00",
+        },
+      };
+      const transactions = [
+        {
+          name: "午餐",
+          meta: "餐饮 · 银行卡",
+          value: "−28.00",
+          icon: "food",
+          kind: "expense",
+          date: "10月28日 · 今天",
+        },
+        {
+          name: "地铁",
+          meta: "交通 · 支付宝",
+          value: "−4.00",
+          icon: "train",
+          kind: "expense",
+          date: "10月28日 · 今天",
+        },
+        {
+          name: "工资",
+          meta: "收入 · 银行卡",
+          value: "+12,000.00",
+          icon: "salary",
+          kind: "income",
+          date: "10月27日 · 昨天",
+        },
+      ];
+      function money(value) {
+        const [whole, cents] = value.split(".");
+        return `<span class="currency">¥</span>${whole}<span class="cents">.${cents}</span>`;
+      }
+      function heading(title, sub = "2026年10月") {
+        return `<div class="app-heading"><h2>${title}</h2><small>${sub}</small></div>`;
+      }
+      function tx(t) {
+        return `<div class="transaction"><div class="transaction-main"><div class="tx-icon">${icon(t.icon)}</div><div><div class="tx-name">${t.name}</div><div class="tx-meta">${t.meta}</div></div></div><div class="tx-amount ${t.kind === "income" ? "income" : ""}">${t.value}</div></div>`;
+      }
+      function overview() {
+        return `<section class="page overview">${heading("简账")}<div class="hero"><div class="landscape" role="img" aria-label="苔绿色树木与灰白湖面的原创油画风景"></div><div class="eyebrow">此刻的净资产</div><div class="money">${money("48,680.00")}</div><div class="hero-foot"><span>资产 49,480 · 负债 800</span><button class="small-action" data-page="assets">查看 ${icon("arrow")}</button></div></div><div class="month-summary"><div><div class="stat-label">本月收入</div><div class="stat-value">12,000.00</div></div><div><div class="stat-label">本月支出</div><div class="stat-value">2,460.00</div></div><div><div class="stat-label">本月结余</div><div class="stat-value">9,540.00</div></div></div><section class="recent-section"><div class="section-head"><h3>最近几笔</h3><button class="small-action" data-page="details">全部 ${icon("arrow")}</button></div>${transactions.map(tx).join("")}</section><p class="bottom-note">一笔一笔，记下生活。</p></section>`;
+      }
+      function details(s) {
+        const filters = `<div class="filterbar">${[
+          ["all", "全部"],
+          ["expense", "支出"],
+          ["income", "收入"],
+        ]
+          .map(
+            ([v, t]) =>
+              `<button data-filter="${v}" class="${s.filter === v ? "active" : ""}">${t}</button>`,
+          )
+          .join("")}</div>`;
+        const sums =
+          '<div class="details-sums"><div><small>本月收入</small><b>12,000.00</b></div><div><small>本月支出</small><b>2,460.00</b></div></div>';
+        const filtered = transactions.filter(
+          (t) => s.filter === "all" || s.filter === t.kind,
+        );
+        if (s.style === "mist")
+          return `<section class="page details">${heading("明细")}${sums}${filters}${[
+            "10月28日 · 今天",
+            "10月27日 · 昨天",
+          ]
+            .map((date) => {
+              const rows = filtered.filter((t) => t.date === date);
+              if (!rows.length) return "";
+              return `<div class="day-group"><div class="day-marker"><strong>${date.includes("28") ? "28" : "27"}</strong>${date.includes("28") ? "今天" : "昨天"}</div><div>${rows.map(tx).join("")}</div></div>`;
+            })
+            .join("")}<p class="bottom-note">十月 · 最近三笔示例</p></section>`;
+        if (s.style === "journal")
+          return `<section class="page details">${heading("明细", "二〇二六 · 十月")}${filters}<div class="transaction-table-head"><span>日期</span><span>事项 / 账户</span><span>金额</span></div>${filtered.map((t) => `<div class="transaction-table-row"><time>${t.date.includes("28") ? "10.28" : "10.27"}</time><div><div class="tx-name">${t.name}</div><div class="tx-meta">${t.meta}</div></div><div class="tx-amount ${t.kind === "income" ? "income" : ""}">${t.value}</div></div>`).join("")}${sums}<p class="bottom-note">仅展示三笔示例流水</p></section>`;
+        let last = "";
+        return `<section class="page details">${heading("明细")}<div class="filterbar">${[
+          ["all", "全部"],
+          ["expense", "支出"],
+          ["income", "收入"],
+        ]
+          .map(
+            ([v, t]) =>
+              `<button data-filter="${v}" class="${s.filter === v ? "active" : ""}">${t}</button>`,
+          )
+          .join(
+            "",
+          )}</div><div class="detail-summary">本月收入 12,000.00　支出 2,460.00</div>${transactions
+          .filter((t) => s.filter === "all" || s.filter === t.kind)
+          .map((t) => {
+            let str =
+              t.date !== last ? `<div class="detail-date">${t.date}</div>` : "";
+            last = t.date;
+            return str + tx(t);
+          })
+          .join("")}<p class="bottom-note">仅展示三笔示例流水</p></section>`;
+      }
+      function assets(s) {
+        const accounts = [
+          ["银", "银行卡", "日常收支", "28,500.00"],
+          ["支", "支付宝", "日常收支", "12,400.00"],
+          ["现", "现金", "手边零钱", "280.00"],
+          ["理", "理财", "手动更新估值", "8,300.00"],
+          ["信", "信用卡", "待还款", "−800.00"],
+        ];
+        const summary = `<div class="account-summary"><div class="eyebrow">净资产</div><div class="money">${money("48,680.00")}</div><div class="account-totals"><span>总资产<b>49,480.00</b></span><span>总负债<b>800.00</b></span></div></div>`;
+        const row = (a, i) =>
+          `<div class="account-row"><button class="account-name" data-demo="账户设置" data-account-name="${a[1]}" style="text-align:left;padding:0"><span class="account-symbol">${s.style === "journal" ? "0" + (i + 1) : a[0]}</span><span><p>${a[1]}</p><small>${a[2]}</small></span></button><div class="account-number">${a[3]}${a[1] === "理财" ? '<button class="small-action investment-link" data-demo="更新理财估值">更新金额</button>' : ""}</div></div>`;
+        const sectionHead =
+          '<div class="section-head"><h3>我的账户</h3><button class="small-action" data-demo="新增账户">＋ 添加</button></div>';
+        if (s.style === "mist")
+          return `<section class="page assets">${heading("资产", "本机账本")}${summary}${sectionHead}<div class="account-grid">${accounts
+            .slice(0, 2)
+            .map(
+              (a) =>
+                `<button class="account-tile" data-demo="账户设置" data-account-name="${a[1]}"><span class="account-title">${a[1]}</span><span class="account-value">${a[3]}</span><span class="account-foot">日常收支　↗</span></button>`,
+            )
+            .join(
+              "",
+            )}</div>${row(accounts[2], 2)}<div class="account-group-title">理财与待还款</div>${row(accounts[3], 3)}${row(accounts[4], 4)}<p class="bottom-note">金额由你记录，按最近盘点更新。</p></section>`;
+        if (s.style === "journal")
+          return `<section class="page assets">${heading("资产", "我的账户簿")}${summary}${sectionHead}<div class="account-table-head"><span>账户 / 用途</span><span>账面余额</span></div>${accounts.map(row).join("")}<p class="bottom-note">理财金额按最近一次盘点记录。</p></section>`;
+        return `<section class="page assets">${heading("资产", "本机账本")}${summary}${sectionHead}<div class="account-group-title">日常账户</div>${accounts.slice(0, 3).map(row).join("")}<div class="account-group-title">理财与负债</div>${row(accounts[3], 3)}${row(accounts[4], 4)}<p class="bottom-note">理财金额按最近一次盘点记录。</p></section>`;
+      }
+      function settings(s) {
+        if (s.sub) return subpage(s);
+        return `<section class="page settings">${heading("设置", "简单一点")}<div class="settings-label">我的账本</div>${[
+          ["labels", "tag", "标签管理", "常用标签，按自己的习惯来"],
+          ["backup", "backup", "备份与迁移", "把账本妥善留一份"],
+          ["history", "history", "变更记录", "回看最近的本地操作"],
+          ["about", "info", "关于简账", "一个安静的记账小工具"],
+        ]
+          .map(([id, ico, title, desc], i) =>
+            settingRow(id, ico, title, desc, i + 1),
+          )
+          .join(
+            "",
+          )}<div class="settings-seal"><svg viewBox="0 0 40 32" aria-hidden="true"><path d="M5 29C15 19 22 12 33 3M14 21C3 20 5 11 10 13s5 5 4 8ZM23 12c-2-9 9-13 8-6s-4 7-8 6ZM18 17c7 3 16-5 9-6s-9 3-9 6Z"/></svg><span>简账 · 本地保存</span></div><div class="settings-footer">所有数据，只留在这台设备。<br>0.1.0</div></section>`;
+      }
+      function settingRow(id, ico, title, desc, index = 1) {
+        return `<button class="settings-row" data-sub="${id}"><span class="settings-row-main"><span class="setting-no">0${index}</span><span class="tx-icon">${icon(ico)}</span><span><strong>${title}</strong><p>${desc}</p></span></span>${icon("chevron")}</button>`;
+      }
+      function subpage(s) {
+        const names = {
+          labels: "标签管理",
+          backup: "备份与迁移",
+          history: "变更记录",
+          about: "关于简账",
+          saved: "自动备份",
+        };
+        let body = "";
+        if (s.sub === "labels")
+          body = `<div class="filterbar"><button class="active">支出</button><button data-demo="收入标签">收入</button></div><div class="tags">${["餐饮", "交通", "日用", "娱乐", "＋ 新标签"].map((t) => `<button data-demo="${t === "＋ 新标签" ? "新增标签" : "编辑标签"}">${t}</button>`).join("")}</div><p class="about-copy">可以不选标签。<br>常用的留着，不常用的就隐藏。</p>`;
+        if (s.sub === "backup")
+          body =
+            settingRow("export", "backup", "导出 JSON", "留一份完整账本") +
+            settingRow("import", "backup", "导入备份", "先预览，再确认替换") +
+            settingRow("saved", "history", "自动备份", "导入前保留的版本") +
+            '<p class="backup-warning">各设备保存独立账本。JSON 是明文文件，请妥善保管；导入会替换本机整本账，不合并。</p>';
+        if (s.sub === "saved")
+          body =
+            '<p class="about-copy">还没有自动备份。<br>正式版本会在导入前，自动保留当前账本。</p>';
+        if (s.sub === "history")
+          body =
+            '<div class="transaction"><div><div class="tx-name">新增流水</div><div class="tx-meta">2026-10-28 12:30 · 界面</div></div></div><div class="transaction"><div><div class="tx-name">账户盘点</div><div class="tx-meta">2026-10-27 20:00 · 界面</div></div></div><p class="bottom-note">以上均为示例记录</p>';
+        if (s.sub === "about")
+          body =
+            '<div class="about-brand">简账</div><p class="about-copy">认真过日子，轻轻记一笔。<br>纯本地 · 无需登录 · 无广告</p><div class="settings-art" aria-hidden="true"></div><p class="about-copy">账目保存在本机，不会自动同步。<br>卸载前，记得导出一份备份。</p>';
+        return `<section class="page subpage"><button class="backlink" data-back="true">${icon("back")}${s.sub === "saved" ? "备份与迁移" : "设置"}</button>${heading(names[s.sub], "")}${body}</section>`;
+      }
+      function entry(s) {
+        const field = (label, value, title) =>
+          `<div class="entry-line"><label>${label}</label><button data-demo="${title}">${value}${icon("chevron")}</button></div>`;
+        const transfer = s.kind === "转账";
+        const fields =
+          field(
+            transfer ? "转出账户" : "账户",
+            s.account || "银行卡",
+            "选择账户",
+          ) +
+          (transfer
+            ? field("转入账户", s.targetAccount || "支付宝", "选择转入账户")
+            : "") +
+          field("日期", "10月28日　今天", "选择日期") +
+          '<div class="entry-line"><label>备注</label><input aria-label="示例备注" placeholder="想写点什么？" maxlength="30"></div>';
+        const tags = transfer
+          ? ""
+          : `<div class="tags-label">标签，可不选</div><div class="tags">${(s.kind === "收入" ? ["工资", "其他", "不选"] : ["餐饮", "交通", "日用", "不选"]).map((t) => `<button data-tag="${t}" class="${s.tag === t ? "active" : ""}">${t}</button>`).join("")}</div>`;
+        return `<section class="page entry">${heading("记一笔", s.style === "journal" ? "二〇二六 · 十月廿八" : "10月28日　今天")}<div class="entry-types">${["支出", "收入", "转账"].map((t) => `<button data-kind="${t}" class="${s.kind === t ? "active" : ""}">${t}</button>`).join("")}</div><div class="amount-input"><span>¥</span><input aria-label="示例金额" inputmode="decimal" data-amount value="${s.amount}" maxlength="12"></div><div class="entry-fields">${fields}</div>${tags}<div class="keypad">${["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"].map((v) => `<button data-key="${v}" aria-label="${v === "⌫" ? "删除末位" : v}">${v === "⌫" ? icon("delete") : v}</button>`).join("")}</div><button class="save" data-save>记好了</button><div class="entry-note">视觉稿体验，不会写入真实账本。</div></section>`;
+      }
+      function screen(s) {
+        return { overview, details, entry, assets, settings }[s.page](s);
+      }
+      function navigation(s) {
+        return `<nav class="bottom-nav" aria-label="示例应用导航">${pages.map(([k, t]) => `<button class="nav-item ${s.page === k ? "active" : ""} ${k === "entry" ? "add" : ""}" data-page="${k}" aria-label="${t}">${k === "entry" ? `<span class="plus">${icon(k)}</span>` : icon(k)}<span>${t}</span></button>`).join("")}</nav>`;
+      }
+      function frame(d, s) {
+        s.style = d.id;
+        return `<div class="phone ${d.id}" data-style="${d.id}"><div class="status"><span>9:41</span><div class="status-icons">${icon("signal")}${icon("wifi")}${icon("battery")}</div></div><div class="screen">${screen(s)}</div>${navigation(s)}</div>`;
+      }
+      function render() {
+        document.body.className = [
+          state.mode === "compare" ? "" : state.mode,
+          state.navMode === "floating" ? "floating-nav" : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+        document
+          .querySelectorAll("[data-nav-mode]")
+          .forEach((b) =>
+            b.setAttribute("aria-pressed", b.dataset.navMode === state.navMode),
+          );
+        document
+          .querySelectorAll("[data-mode]")
+          .forEach((b) =>
+            b.setAttribute("aria-pressed", b.dataset.mode === state.mode),
+          );
+        document.querySelector(".page-controls").innerHTML = pages
+          .map(
+            ([k, t]) =>
+              `<button data-global-page="${k}" aria-pressed="${state.page === k}">${t}</button>`,
+          )
+          .join("");
+        document.querySelector("#comparison").innerHTML =
+          directions
+            .map(
+              (d) =>
+                `<section class="direction ${d.id === state.selected ? "selected" : ""}"><div class="direction-head"><div class="direction-name"><span class="direction-index">${d.number}</span>${d.name}${d.id === "mist" ? '<span class="recommendation">推荐</span>' : ""}</div><button class="direction-open" data-focus="${d.id}">单独看${icon("arrow")}</button></div><p class="direction-desc">${d.short}<br>${d.type}</p>${frame(d, state.screens[d.id])}<div class="design-notes"><div class="swatches">${d.palette.map((c) => `<i style="background:${c}"></i>`).join("")}</div><p>${d.desc}</p></div></section>`,
+            )
+            .join("") + focusNote();
+        document.querySelector(".desktop-shell .desktop-picker").innerHTML =
+          directions
+            .map(
+              (d) =>
+                `<button data-desktop-style="${d.id}" aria-pressed="${d.id === state.selected}">${d.number}　${d.name}</button>`,
+            )
+            .join("");
+        renderDesktop();
+      }
+      function focusNote() {
+        const d = directions.find((x) => x.id === state.selected);
+        return `<aside class="focus-note"><div class="note-number">${d.number}</div><h2>${d.name}</h2><p>${d.desc}</p><dl><dt>排版</dt><dd>${d.type}</dd><dt>风景的分量</dt><dd>${d.art}</dd><dt>适合的感觉</dt><dd>${d.fit}</dd><dt>取舍</dt><dd>${d.caution}</dd></dl><div class="desktop-picker">${directions.map((x) => `<button data-focus="${x.id}" aria-pressed="${x.id === d.id}">${x.number} ${x.name}</button>`).join("")}</div></aside>`;
+      }
+      function renderDesktop() {
+        const d = directions.find((x) => x.id === state.selected),
+          s = state.desktop;
+        s.style = d.id;
+        document.querySelector("#desktop").innerHTML =
+          `<div class="phone desktop-app ${d.id}" data-style="desktop"><aside class="desktop-sidebar"><div class="brand">简账</div>${pages.map(([k, t]) => `<button class="${s.page === k ? "active" : ""}" data-page="${k}">${icon(k)}${t}</button>`).join("")}<div class="sidebar-footer">2026年10月<br>数据仅保存在本机</div></aside><div class="desktop-main">${screen(s)}</div></div>`;
+      }
+      function showToast(host, text) {
+        host.querySelector(".toast")?.remove();
+        const t = document.createElement("div");
+        t.className = "toast";
+        t.setAttribute("role", "status");
+        t.textContent = text;
+        host.appendChild(t);
+        setTimeout(() => t.remove(), 2700);
+      }
+      function closeSheet(host) {
+        host.querySelector(".operation-sheet")?.remove();
+        host.querySelector(".sheet-shade")?.remove();
+      }
+      function showSheet(host, title, sourceButton) {
+        closeSheet(host);
+        const id = host.dataset.style,
+          s = id === "desktop" ? state.desktop : state.screens[id];
+        const el = document.createElement("section");
+        el.className = "operation-sheet";
+        el.setAttribute("role", "dialog");
+        el.setAttribute("aria-label", title);
+        const accountPicker = title === "选择账户" || title === "选择转入账户";
+        let body = "",
+          subtitle = "按自己的习惯，轻轻记一笔。";
+        const actions = (label = "完成预览") =>
+          `<div class="sheet-actions"><button class="secondary" data-close-sheet>取消</button><button data-sheet-done>${label}</button></div>`;
+        if (accountPicker) {
+          subtitle =
+            title === "选择账户"
+              ? "这笔记在哪个账户里？"
+              : "选择资金转入的账户。";
+          body = [
+            ["银行卡", "28,500.00"],
+            ["支付宝", "12,400.00"],
+            ["现金", "280.00"],
+            ["信用卡", "待还 800.00"],
+          ]
+            .map(
+              ([name, value]) =>
+                `<button class="sheet-account" data-choose-account="${name}" data-target-account="${title === "选择转入账户"}" aria-pressed="${(title === "选择账户" ? s.account || "银行卡" : s.targetAccount || "支付宝") === name}"><span><strong>${name}</strong><small>${value}</small></span><span class="check">${(title === "选择账户" ? s.account || "银行卡" : s.targetAccount || "支付宝") === name ? "✓" : ""}</span></button>`,
+            )
+            .join("");
+        } else if (title === "更新理财估值") {
+          subtitle = "记录现在大概有多少钱，不用拆分每一笔收益。";
+          body =
+            '<label class="sheet-field">当前估值 · 元<input class="numeric" aria-label="示例理财估值" inputmode="decimal" value="8300.00"></label><p class="sheet-caption">盘点改变资产金额，不计入工资收入或日常支出。</p>' +
+            actions("确认盘点");
+        } else if (title === "新增账户" || title === "账户设置") {
+          const selected = sourceButton?.dataset.accountName || "银行卡";
+          subtitle =
+            title === "新增账户"
+              ? "先给这个账户起个名字。"
+              : "账户名称和用途，按你的习惯来。";
+          body =
+            `<label class="sheet-field">账户名称<input aria-label="示例账户名称" value="${selected}" maxlength="20"></label><label class="sheet-field">${title === "新增账户" ? "初始金额" : "账户类型"}<input aria-label="示例账户类型或初始金额" value="${title === "新增账户" ? "0.00" : "日常收支"}"></label>` +
+            actions(title === "新增账户" ? "创建账户" : "保存修改");
+        } else if (
+          title === "新增标签" ||
+          title === "编辑标签" ||
+          title === "收入标签"
+        ) {
+          subtitle = "标签是可选的，只留下自己常用的。";
+          body =
+            '<label class="sheet-field">标签名称<input aria-label="示例标签名称" value="餐饮" maxlength="12"></label><div class="sheet-account"><span><strong>在记账时显示</strong><small>隐藏后保留已有记录</small></span><input type="checkbox" checked aria-label="示例标签可见"></div>' +
+            actions("保存标签");
+        } else if (title === "选择日期") {
+          subtitle = "也可以补记之前的流水。";
+          body =
+            '<label class="sheet-field">流水日期<input type="date" aria-label="示例日期" value="2026-10-28"></label>' +
+            actions("选好了");
+        } else if (title === "确认导入") {
+          subtitle = "预览备份，再决定是否替换。";
+          body =
+            '<div class="sheet-account"><strong>备份内容</strong><span>5 个账户 · 3 笔流水</span></div><p class="sheet-caption">正式应用会先校验文件、自动备份当前账本，再替换本机整本账。此处只演示确认界面。</p>' +
+            actions("确认替换");
+        } else {
+          subtitle = "留一份完整的本地账本。";
+          body =
+            '<p class="about-copy">导出为 JSON 明文文件。<br>请妥善保存，拿到文件的人可以读取内容。</p>' +
+            actions("导出备份");
+        }
+        el.innerHTML = `<div class="sheet-heading"><h3>${title}</h3><button class="sheet-close" data-close-sheet aria-label="关闭操作框">×</button></div><p class="sheet-subtitle">${subtitle}</p>${body}<p class="sheet-caption">全部为虚构数据 · 仅预览操作框样式</p>`;
+        const shade = document.createElement("button");
+        shade.className = "sheet-shade";
+        shade.setAttribute("aria-label", "关闭操作框遮罩");
+        shade.setAttribute("data-close-sheet", "");
+        host.append(shade, el);
+      }
+      document.addEventListener("click", (e) => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        if (b.dataset.navMode) {
+          state.navMode = b.dataset.navMode;
+          document.body.classList.toggle(
+            "floating-nav",
+            state.navMode === "floating",
+          );
+          document
+            .querySelectorAll("[data-nav-mode]")
+            .forEach((n) =>
+              n.setAttribute(
+                "aria-pressed",
+                n.dataset.navMode === state.navMode,
+              ),
+            );
+          return;
+        }
+        if (b.dataset.mode) {
+          state.mode = b.dataset.mode;
+          render();
+          return;
+        }
+        if (b.dataset.focus) {
+          state.selected = b.dataset.focus;
+          state.mode = "focus";
+          render();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+        if (b.dataset.desktopStyle) {
+          state.selected = b.dataset.desktopStyle;
+          render();
+          return;
+        }
+        if (b.dataset.globalPage) {
+          state.page = b.dataset.globalPage;
+          Object.values(state.screens).forEach((s) => {
+            s.page = state.page;
+            s.sub = null;
+          });
+          state.desktop.page = state.page;
+          state.desktop.sub = null;
+          render();
+          return;
+        }
+        const host = b.closest("[data-style]");
+        if (!host) return;
+        const id = host.dataset.style,
+          s = id === "desktop" ? state.desktop : state.screens[id];
+        let rerender = false;
+        if (b.hasAttribute("data-close-sheet")) {
+          closeSheet(host);
+          return;
+        }
+        if (b.hasAttribute("data-sheet-done")) {
+          closeSheet(host);
+          showToast(host, "操作样式预览完成，未更改真实账本。");
+          return;
+        }
+        if (b.dataset.chooseAccount) {
+          s[b.dataset.targetAccount === "true" ? "targetAccount" : "account"] =
+            b.dataset.chooseAccount;
+          closeSheet(host);
+          rerender = true;
+        }
+        if (b.dataset.page) {
+          s.page = b.dataset.page;
+          s.sub = null;
+          rerender = true;
+        }
+        if (b.dataset.filter) {
+          s.filter = b.dataset.filter;
+          rerender = true;
+        }
+        if (b.dataset.kind) {
+          s.kind = b.dataset.kind;
+          s.tag = s.kind === "收入" ? "工资" : "餐饮";
+          rerender = true;
+        }
+        if (b.dataset.tag) {
+          s.tag = b.dataset.tag;
+          rerender = true;
+        }
+        if (b.dataset.sub) {
+          if (["export", "import"].includes(b.dataset.sub)) {
+            showSheet(
+              host,
+              b.dataset.sub === "import" ? "确认导入" : "导出备份",
+              b,
+            );
+            return;
+          }
+          s.sub = b.dataset.sub;
+          rerender = true;
+        }
+        if (b.dataset.back) {
+          s.sub = s.sub === "saved" ? "backup" : null;
+          rerender = true;
+        }
+        if (b.dataset.key) {
+          const k = b.dataset.key;
+          if (k === "⌫") s.amount = s.amount.slice(0, -1);
+          else if (
+            !(k === "." && s.amount.includes(".")) &&
+            s.amount.length < 11
+          ) {
+            if (s.amount === "28.00" || s.amount === "0")
+              s.amount = k === "." ? "0." : k;
+            else s.amount += k;
+          }
+          rerender = true;
+        }
+        if (b.hasAttribute("data-save")) {
+          showToast(host, "这笔已在视觉稿中体验完成，未保存任何数据。");
+          return;
+        }
+        if (b.dataset.demo) {
+          showSheet(host, b.dataset.demo, b);
+          return;
+        }
+        if (rerender) {
+          const scroll = host.querySelector(".screen,.desktop-main");
+          if (id === "desktop") {
+            renderDesktop();
+          } else {
+            host.querySelector(".screen").innerHTML = screen(s);
+            host.querySelector(".bottom-nav").outerHTML = navigation(s);
+          }
+          if (b.dataset.page || b.dataset.sub || b.dataset.back)
+            scroll.scrollTop = 0;
+        }
+      });
+      document.addEventListener("input", (e) => {
+        if (!e.target.hasAttribute("data-amount")) return;
+        const host = e.target.closest("[data-style]"),
+          s =
+            host.dataset.style === "desktop"
+              ? state.desktop
+              : state.screens[host.dataset.style];
+        const val = e.target.value.replace(/[^0-9.]/g, "").split(".");
+        s.amount =
+          val[0] +
+          (val.length > 1 ? "." + val.slice(1).join("").slice(0, 2) : "");
+        e.target.value = s.amount;
+      });
+      render();
+    </script>
+  </body>
+</html>
