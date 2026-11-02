@@ -2117,7 +2117,7 @@ export function LedgerApp({
                       wide && { flex: 1 },
                     ]}
                   >
-                    <View style={s.hero}>
+                    <View style={[s.hero, s.overviewHero]}>
                       <Text style={s.sectionLabel}>本月支出</Text>
                       <Text
                         variant="amount"
@@ -2128,12 +2128,12 @@ export function LedgerApp({
                       >
                         ¥ {amountText(summary.expenseMinor)}
                       </Text>
-                      <View style={s.summaryRow}>
+                      <View style={[s.summaryRow, s.overviewSummaryRow]}>
                         <View style={s.summaryCell}>
                           <Text style={s.muted}>本月收入</Text>
                           <Text
                             variant="amount"
-                            style={s.stat}
+                            style={[s.stat, s.overviewStat]}
                             numberOfLines={1}
                             adjustsFontSizeToFit
                           >
@@ -2144,7 +2144,11 @@ export function LedgerApp({
                           <Text style={s.muted}>本月结余</Text>
                           <Text
                             variant="amount"
-                            style={[s.stat, { color: c.positive }]}
+                            style={[
+                              s.stat,
+                              s.overviewStat,
+                              { color: c.positive },
+                            ]}
                             numberOfLines={1}
                             adjustsFontSizeToFit
                           >
@@ -2167,7 +2171,7 @@ export function LedgerApp({
                         <AssetValue
                           value={amountText(wealth.netMinor)}
                           variant="amount"
-                          style={s.stat}
+                          style={[s.stat, s.overviewStat]}
                           numberOfLines={1}
                           adjustsFontSizeToFit
                         />

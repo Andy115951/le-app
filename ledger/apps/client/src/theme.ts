@@ -46,10 +46,10 @@ export const styles = StyleSheet.create({
     lineHeight: 21,
   },
   amount: {
-    fontSize: 45,
+    fontSize: 36,
     fontWeight: "600",
     color: colors.ink,
-    lineHeight: 63,
+    lineHeight: 50,
     fontVariant: ["tabular-nums"],
   },
   stat: {
@@ -59,6 +59,7 @@ export const styles = StyleSheet.create({
     lineHeight: 31,
     fontVariant: ["tabular-nums"],
   },
+  overviewStat: { fontSize: 19, lineHeight: 27 },
   input: {
     borderBottomWidth: 1,
     borderColor: colors.line,
@@ -208,6 +209,7 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.line,
   },
+  overviewHero: { gap: 8, paddingBottom: 18 },
   assetEye: {
     width: 36,
     height: 36,
@@ -230,6 +232,7 @@ export const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.line,
   },
+  overviewSummaryRow: { marginTop: 10, paddingTop: 14 },
   summaryCell: { flex: 1, gap: 6, minWidth: 0 },
   assetPeek: {
     flexDirection: "row",
