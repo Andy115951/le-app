@@ -1,0 +1,15 @@
+# Ledger product website
+
+English | [简体中文](./README.zh-CN.md)
+
+A standalone, static Chinese product website for 智账 (Android) / 简账 (desktop). It introduces local bookkeeping, accounts, the natural-light vault, manual LAN transfer, supported platforms and privacy. All account names, balances and records are fictional. Phone interactions only change current-page memory and reset on reload. The website never imports the client, opens SQLite, reads an export, requests camera access or initiates a real transfer.
+
+Run from this directory with Node 22+: `npm run check`, `npm run build`, then `npm run dev`. Preview at `http://127.0.0.1:4190/`. No dependencies or environment secrets are required. Deploy `dist/` to a static host. `build.mjs` copies only the explicit website HTML/CSS/JS and `assets/`; it does not package the surrounding ledger workspace, native output, records or installers. Hosting identity and credentials remain outside public source.
+
+The application-getting dialogs explain that installers are not publicly published yet, and link to the real public project/installation guide. Do not replace these with nonfunctional download buttons. Publishing actual installers is a separate explicit release step; review binary privacy, signing, platform support and source provenance before making them public.
+
+Cabinet and gold WebP assets derive from the project's existing generated artwork. Fonts are renamed WOFF2 subsets of the bundled weight-600 Noto Serif SC and Libre Baskerville derivatives; both OFL texts accompany them. The source bundles its own assets and does not integrate analytics. VibeDrop adds visit statistics and hosting widgets to the delivered page; the privacy dialog discloses this. No proprietary font or customer screenshot is used. The project icon is the existing SVG.
+
+Browser checks cover desktop and narrow layouts, no horizontal overflow, denomination boundaries, cabinet upgrading, sample-entry arithmetic, independent amount/vault eyes, transfer-direction illustration, FAQ expansion, platform-information dialogs and privacy disclosure. Honor reduced-motion preferences and retain keyboard focus/labels when changing interactions. The transfer illustration is not a connection control; exported JSON and application storage retain their existing unencrypted-at-rest behavior.
+
+For a link-only VibeDrop preview, run `npm exec --yes --package=@vibedrop/cli@0.3.0 -- vibedrop deploy ./dist --unlisted --title "智账 · 把生活记清楚"` after building. To keep the same URL on later deploys, append `--slug EXISTING_SLUG` using the server-returned slug. Deploy only `dist/`, never the ledger workspace or installers. Unlisted links are accessible to anyone who has the URL; they do not require an OpenAI login and are not submitted to Explore/search. Check the returned expiry before treating the link as permanent. The CLI credential file remains in the user profile, outside this repository; ignored `.openai/vibedrop.json` may retain non-secret deployment metadata. See the [official CLI guide](https://vibedrop.cc/skill.md).

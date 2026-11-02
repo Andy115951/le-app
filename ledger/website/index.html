@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#f5f4ec" />
+    <meta
+      name="description"
+      content="智账，一个留在你设备里的日常账本。轻松记录收支、管理资产，用自然光小金库看见积累，手机与电脑通过局域网传递账本。"
+    />
+    <meta property="og:title" content="智账 · 把生活记清楚" />
+    <meta
+      property="og:description"
+      content="记下收支，理清账户。把生活记清楚，把余裕留给自己。"
+    />
+    <meta property="og:type" content="website" />
+    <title>智账 · 把生活记清楚</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到正文</a>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="智账首页"
+        ><img src="./assets/icon.svg" width="34" height="34" alt="" /><span
+          >智账<span class="brand-note">日常有数，生活有余。</span></span
+        ></a
+      >
+      <nav aria-label="主导航">
+        <a href="#features">认识智账</a><a href="#vault">小金库</a
+        ><a href="#questions">常见问题</a>
+      </nav>
+      <a class="button small" href="#get"
+        >获取应用 <span aria-hidden="true">↗</span></a
+      >
+    </header>
+    <main id="main">
+      <section class="hero section-shell" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">
+            <span class="status-dot"></span> 给日常留一本简单的账
+          </p>
+          <h1 id="hero-title">
+            把生活记清楚。<br /><span>把余裕留给自己。</span>
+          </h1>
+          <p class="hero-description">
+            记下收支，理清账户，让钱的去向心里有数。<br
+              class="desktop-break"
+            />一个留在你设备里的小账本，陪你慢慢积累。
+          </p>
+          <div class="hero-actions">
+            <a class="button" href="#features"
+              >认识一下智账 <span aria-hidden="true">→</span></a
+            ><a
+              class="text-link"
+              href="https://github.com/Andy115951/le-app/tree/main/ledger"
+              target="_blank"
+              rel="noopener noreferrer"
+              >看看开源项目 <span aria-hidden="true">↗</span></a
+            >
+          </div>
+          <div class="hero-promises">
+            <span><i aria-hidden="true">✓</i> 不用注册</span
+            ><span><i aria-hidden="true">✓</i> 本地存储</span
+            ><span><i aria-hidden="true">✓</i> 随时导出</span>
+          </div>
+          <p class="platform-note">
+            Android · macOS · Windows<span
+              >手机端叫「智账」，电脑端叫「简账」</span
+            >
+          </p>
+        </div>
+        <div class="hero-visual">
+          <div class="orbit orbit-one" aria-hidden="true"></div>
+          <div class="orbit orbit-two" aria-hidden="true"></div>
+          <span class="floating-note note-one"
+            ><span aria-hidden="true">✦</span> 一点一点，都是积累。</span
+          >
+          <div class="phone" aria-label="智账交互演示，所有金额均为虚构数据">
+            <div class="phone-camera" aria-hidden="true"></div>
+            <div class="phone-status" aria-hidden="true">
+              <span>9:41</span><span>▰ ▰ ▰</span>
+            </div>
+            <div class="demo-heading">
+              <span>智账</span><span class="demo-caption">示例账本</span>
+            </div>
+            <div id="phone-screen" class="phone-screen"></div>
+            <nav class="demo-nav" aria-label="应用演示页面">
+              <button type="button" data-tab="overview" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg
+                >总览</button
+              ><button type="button" data-tab="add" aria-pressed="false">
+                <span class="demo-add" aria-hidden="true">＋</span
+                >记一笔</button
+              ><button type="button" data-tab="assets" aria-pressed="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h17v15H3zM3 6V3h14v3M16 12h5v5h-5z" /></svg
+                >资产
+              </button>
+            </nav>
+          </div>
+          <div class="floating-note note-two">
+            <span class="tiny-leaf" aria-hidden="true">↗</span
+            ><span>记账这件小事，<br />也可以很舒服。</span>
+          </div>
+          <p class="demo-disclosure">可点击切换页面 · 全部为虚构数据</p>
+        </div>
+      </section>
+      <div class="intro-line section-shell">
+        <span>少一点负担，多一点清楚。</span>
+        <p>不必补齐过去，也不必记得完美。<br />从今天的一笔开始，就很好。</p>
+        <span class="intro-mark" aria-hidden="true">✳</span>
+      </div>
+      <section
+        class="features section-shell"
+        id="features"
+        aria-labelledby="features-title"
+      >
+        <div class="section-heading">
+          <p class="eyebrow">FOR THE EVERYDAY</p>
+          <h2 id="features-title">刚好够用，<br />也刚好顺手。</h2>
+          <p>把复杂留给计算，<br />把简单留给每天的你。</p>
+        </div>
+        <div class="feature-columns">
+          <article class="feature">
+            <div class="feature-art entry-art" aria-hidden="true">
+              <div class="mini-label">午餐 · 餐饮</div>
+              <div class="mini-money">¥ 28<span>.00</span></div>
+              <div class="mini-tags">
+                <span>银行卡</span><span>今天</span
+                ><span class="mini-tag-green">吃饭</span>
+              </div>
+              <div class="mini-save">记好了 <span>✓</span></div>
+            </div>
+            <span class="feature-number">01 / 随手一记</span>
+            <h3>一笔日常，轻轻记下。</h3>
+            <p>
+              支出、收入、转账，各有各的位置。标签可以选，也可以不选，按自己的习惯来。
+            </p>
+          </article>
+          <article class="feature">
+            <div class="feature-art account-art" aria-hidden="true">
+              <div>
+                <span class="account-symbol">▤</span
+                ><span>示例银行卡<small>日常收支</small></span
+                ><b>28,500.00</b>
+              </div>
+              <div>
+                <span class="account-symbol">↗</span
+                ><span>示例理财<small>按最近一次盘点</small></span
+                ><b>8,300.00</b>
+              </div>
+              <div>
+                <span class="account-symbol">▱</span
+                ><span>示例信用卡<small>待还款</small></span
+                ><b>−800.00</b>
+              </div>
+            </div>
+            <span class="feature-number">02 / 钱在哪里</span>
+            <h3>账户分开，心里明白。</h3>
+            <p>
+              现金、银行卡、理财和信用卡，一起看清资产与负债。不再使用的账户可以归档，留下历史。
+            </p>
+          </article>
+          <article class="feature">
+            <div class="feature-art month-art" aria-hidden="true">
+              <div class="month-heading">
+                <span>2026 年</span><b>十月小记</b>
+              </div>
+              <div class="month-total">
+                <span>本月支出</span><strong>2,460<small>.00</small></strong>
+              </div>
+              <div class="month-bars">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+            <span class="feature-number">03 / 回头看看</span>
+            <h3>生活的轮廓，慢慢清晰。</h3>
+            <p>
+              看看这个月的收支与结余，也能快速跳到过去的月份。每一笔记录，都有迹可循。
+            </p>
+          </article>
+        </div>
+      </section>
+      <section class="vault-section" id="vault" aria-labelledby="vault-title">
+        <div class="section-shell vault-layout">
+          <div class="vault-copy">
+            <p class="eyebrow">A LITTLE ROOM FOR YOUR PROGRESS</p>
+            <h2 id="vault-title">把一点积累，<br />存进小金库。</h2>
+            <p>
+              让抽象的数字，有一点可爱的形状。<br />金块、金币、金粒，装着每一次认真生活的痕迹。
+            </p>
+            <div class="vault-value">
+              <span>试着调整示例净资产</span
+              ><output id="vault-value" for="vault-slider">¥ 48,680.00</output>
+            </div>
+            <input
+              id="vault-slider"
+              aria-label="调整小金库的虚构净资产金额"
+              type="range"
+              min="0"
+              max="150000"
+              step="5"
+              value="48680"
+            />
+            <div class="vault-presets" aria-label="示例金额">
+              <button type="button" data-amount="45">¥45</button
+              ><button type="button" data-amount="135">¥135</button
+              ><button
+                type="button"
+                data-amount="48680"
+                class="active"
+                aria-pressed="true"
+              >
+                ¥48,680</button
+              ><button type="button" data-amount="128500">¥128,500</button>
+            </div>
+            <p class="small-note">
+              展示随净资产变化，不代表投资收益或实物黄金。
+            </p>
+          </div>
+          <div class="vault-exhibit">
+            <div class="vault-halo" aria-hidden="true"></div>
+            <div class="large-vault vault-scene" id="large-vault"></div>
+            <div id="vault-counts" class="vault-counts" aria-live="polite">
+              4 块金块 · 8 枚金币 · 6 颗金粒
+            </div>
+            <p class="vault-exhibit-note">自然光，温柔地照着每一点进步。</p>
+          </div>
+        </div>
+      </section>
+      <section
+        class="local-section section-shell"
+        id="local"
+        aria-labelledby="local-title"
+      >
+        <div class="local-copy">
+          <p class="eyebrow">YOUR BOOK. YOUR DEVICES.</p>
+          <h2 id="local-title">账本跟着你。<br />不必经过云端。</h2>
+          <p>
+            记在手机，也能带到电脑。<br />同一局域网，连上后选择覆盖方向，<br />接收方确认，先备份，再替换。
+          </p>
+          <a class="text-link" href="#questions"
+            >了解传输方式 <span aria-hidden="true">↗</span></a
+          >
+        </div>
+        <div class="sync-board">
+          <div class="sync-caption">
+            <span class="status-dot"></span> 同一局域网 · 一次性连接
+          </div>
+          <div class="sync-devices">
+            <div class="sync-mobile">
+              <img src="./assets/icon.svg" width="38" height="38" alt="" /><span
+                >智账</span
+              ><small>手机</small>
+            </div>
+            <div class="sync-route">
+              <span>加密传输</span
+              ><svg viewBox="0 0 150 24">
+                <path d="M0 12h145m-7-6 7 6-7 6" /></svg
+              ><button
+                type="button"
+                id="direction-button"
+                aria-label="切换传输方向"
+              >
+                ⇄ 切换方向
+              </button>
+            </div>
+            <div class="sync-desktop">
+              <div>
+                <img
+                  src="./assets/icon.svg"
+                  width="38"
+                  height="38"
+                  alt=""
+                /><span>简账</span>
+              </div>
+              <small>电脑</small>
+            </div>
+          </div>
+          <div class="sync-receipt">
+            <span aria-hidden="true">✓</span>
+            <p id="sync-copy">
+              手机 → 电脑<small>接收方确认后，先备份原账本，再完整替换。</small>
+            </p>
+          </div>
+          <p class="sync-footnote">
+            手动整本传输，不自动合并。这里只是流程示意。
+          </p>
+        </div>
+      </section>
+      <section class="get-section" id="get" aria-labelledby="get-title">
+        <div class="section-shell">
+          <div class="get-heading">
+            <p class="eyebrow">MAKE ROOM FOR A LITTLE CLARITY</p>
+            <h2 id="get-title">从今天开始，<span>记得轻松一点。</span></h2>
+            <p>手机随手记，电脑慢慢理。选一台你常用的设备。</p>
+          </div>
+          <div class="platforms">
+            <article>
+              <span class="os-symbol" aria-hidden="true">◉</span>
+              <div>
+                <h3>Android</h3>
+                <p>智账 · Android 7.0+ / arm64</p>
+              </div>
+              <button
+                type="button"
+                class="platform-action"
+                data-platform="Android"
+                aria-label="查看 Android 测试版获取方式"
+              >
+                获取方式 <span aria-hidden="true">↗</span>
+              </button>
+            </article>
+            <article>
+              <span class="os-symbol" aria-hidden="true">⌘</span>
+              <div>
+                <h3>macOS</h3>
+                <p>简账 · Apple 芯片</p>
+              </div>
+              <button
+                type="button"
+                class="platform-action"
+                data-platform="macOS"
+                aria-label="查看 macOS 测试版获取方式"
+              >
+                获取方式 <span aria-hidden="true">↗</span>
+              </button>
+            </article>
+            <article>
+              <span class="os-symbol" aria-hidden="true">⊞</span>
+              <div>
+                <h3>Windows</h3>
+                <p>简账 · x64 测试版</p>
+              </div>
+              <button
+                type="button"
+                class="platform-action"
+                data-platform="Windows"
+                aria-label="查看 Windows 测试版获取方式"
+              >
+                获取方式 <span aria-hidden="true">↗</span>
+              </button>
+            </article>
+          </div>
+          <p class="get-note">
+            目前处于测试阶段，安装包尚未公开发布。你也可以<a
+              href="https://github.com/Andy115951/le-app/tree/main/ledger"
+              target="_blank"
+              rel="noopener noreferrer"
+              >查看源代码与项目说明 ↗</a
+            >
+          </p>
+        </div>
+      </section>
+      <section
+        class="faq-section section-shell"
+        id="questions"
+        aria-labelledby="faq-title"
+      >
+        <div>
+          <p class="eyebrow">A FEW THINGS TO KNOW</p>
+          <h2 id="faq-title">也许你想知道。</h2>
+          <p>把关心的事情，说清楚一点。</p>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>
+              智账和简账，是同一个应用吗？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              是同一个记账项目。Android 端叫「智账」，macOS 和 Windows
+              端叫「简账」，共用记账、资产计算和备份规则。各设备保存自己的账本，可以手动迁移。
+            </p>
+          </details>
+          <details>
+            <summary>
+              需要注册账号，或把账本上传到云端吗？<span aria-hidden="true"
+                >＋</span
+              >
+            </summary>
+            <p>
+              不需要。账本保存在应用所在的设备中，没有云端账本或自动云同步。你可以主动导出
+              JSON 备份，或在局域网里传输。JSON 备份文件是明文，请妥善保管。
+            </p>
+          </details>
+          <details>
+            <summary>
+              手机和电脑，会自动同步吗？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              不会自动同步或合并。两端连接同一局域网，在电脑开启一次性连接，手机扫码或粘贴连接码后，选择哪端覆盖哪端。接收方确认后，先自动备份原账本，再整本替换。连接十分钟后失效。
+            </p>
+          </details>
+          <details>
+            <summary>
+              不再使用的账户，可以删除吗？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              可以选择归档或删除。归档保留历史与余额，余额仍计入总资产，之后可以恢复；彻底删除会移除账户和关联流水、盘点，执行前自动备份整本账本。涉及转账或还款时，另一个账户的余额也会重新计算。
+            </p>
+          </details>
+          <details>
+            <summary>
+              小金库里的金子，是怎么算的？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              根据净资产展示：一万元是一块金块，一千元是一枚金币，一百元是一颗金粒，余下的零头显示为金粉。它只是金额的可视化，不代表持有实物黄金；零或负净资产时显示空金库。
+            </p>
+          </details>
+          <details>
+            <summary>
+              可以在 iPhone 或浏览器里记账吗？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              目前提供 Android、macOS 和 Windows 构建，暂未提供 iPhone
+              版本或独立的在线记账服务。这个官网用于介绍产品，页面中的交互是虚构数据演示，不连接真实账本。
+            </p>
+          </details>
+        </div>
+      </section>
+      <section class="closing section-shell">
+        <span class="closing-mark" aria-hidden="true">✳</span>
+        <p>每一笔，都由你记录。<br /><span>每一点余裕，都值得珍惜。</span></p>
+        <a href="#" class="back-top" aria-label="返回页首">↑</a>
+      </section>
+    </main>
+    <footer class="site-footer section-shell">
+      <a class="brand" href="#"
+        ><img src="./assets/icon.svg" width="30" height="30" alt="" /><span
+          >智账</span
+        ></a
+      ><span>一个简单、安静的本地账本。</span>
+      <div>
+        <button type="button" id="privacy-button">隐私说明</button
+        ><a
+          href="https://github.com/Andy115951/le-app/tree/main/ledger"
+          target="_blank"
+          rel="noopener noreferrer"
+          >GitHub ↗</a
+        ><a href="./assets/NotoSerifSC-OFL.txt" target="_blank">字体许可 ↗</a>
+      </div>
+    </footer>
+    <dialog id="info-dialog" aria-labelledby="dialog-title">
+      <button type="button" class="dialog-close" aria-label="关闭对话框">
+        ×
+      </button>
+      <p class="eyebrow">智账 / 简账</p>
+      <h2 id="dialog-title">获取测试版</h2>
+      <div id="dialog-content"></div>
+      <button type="button" class="button dialog-done">知道了</button>
+    </dialog>
+    <noscript
+      ><p class="noscript-note">
+        产品介绍可正常阅读。开启 JavaScript 后，可以切换演示页面和调整小金库。
+      </p></noscript
+    >
+  </body>
+</html>
