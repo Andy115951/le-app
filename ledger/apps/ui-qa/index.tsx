@@ -6,6 +6,7 @@ import { emptyLedger, execute, type Command } from "@ledger/core";
 import { LedgerApp, type LedgerViewRepository } from "../client/src/App";
 import { AppearanceProvider, Text } from "../client/src/appearance";
 import { colors, styles } from "../client/src/theme";
+import { VaultGallery } from "./VaultGallery";
 
 // Fixed fictional fixture, created through the same public rules as the app.
 // This entry never calls openLedger or opens a database/IPC connection.
@@ -66,7 +67,12 @@ function UiQa() {
               界面 QA · 虚构数据 · 只读预览
             </Text>
           </View>
-          <LedgerApp repo={repo} initial={snapshot} />
+          {typeof location !== "undefined" &&
+          new URLSearchParams(location.search).get("view") === "vault" ? (
+            <VaultGallery />
+          ) : (
+            <LedgerApp repo={repo} initial={snapshot} />
+          )}
         </View>
       </AppearanceProvider>
     </SafeAreaProvider>

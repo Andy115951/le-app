@@ -14,14 +14,25 @@ TypeScript and 14 tests pass, including cent boundaries, tier changes, bounded l
 
 ## Agreed mapping
 
-| Value                   | Representation                 |
-| ----------------------- | ------------------------------ |
-| CNY 10,000              | One gold bar                   |
-| CNY 1,000               | One coin                       |
-| CNY 100                 | One grain                      |
-| Remainder below CNY 100 | A variable amount of gold dust |
+| Value                  | Representation                      |
+| ---------------------- | ----------------------------------- |
+| CNY 10,000             | One thick gold ingot                |
+| CNY 1,000              | One horizontal cylindrical gold rod |
+| CNY 100                | One coin                            |
+| CNY 10                 | One grain                           |
+| Remainder below CNY 10 | A variable amount of gold dust      |
 
-These are fixed visual denominations, independent of gold prices. For example, a fictional CNY 12,345 becomes one bar, two coins, three grains and CNY 45 of dust. Calculate the decomposition in integer cents, including fractional yuan. Dust size and particle count vary with the remainder; exact numbers remain authoritative because tiny differences cannot all be visually distinct.
+These are fixed visual denominations, independent of gold prices. For example, a fictional CNY 12,345 becomes one ingot, two rods, three coins, four grains and CNY 5 of dust. Calculate the decomposition in integer cents, including fractional yuan. Dust size and particle count vary with the remainder; exact numbers remain authoritative because tiny differences cannot all be visually distinct.
+
+### Small savings update — 2026-11-02
+
+The production client reuses the existing natural-light ingots, coins, grains and cabinets, adding one transparent horizontal gold-cylinder sprite. Its round end and curved side distinguish it from both ingots and coins; rods lie on their sides in short staggered stacks. The denomination mapping above supersedes the older studies below. CNY 35 now shows three grains and CNY 5 of dust; CNY 135 shows one coin, three grains and CNY 5 of dust. Omit absent denominations from inventory captions, with a persistent compact denomination legend while the vault is open.
+
+The small safe has a closer framing, with larger coins and grains below CNY 1,000. Place higher-value, heavier forms lower: ingots rest on the cabinet floor, rods occupy the shelf above the complete ingot stack, and a shallow ivory/sage tray holds coins, grains and dust above the rods. Missing groups leave no empty shelf; if no heavier groups exist, smaller forms rest at the bottom. Use stack height and actual cylinder aspect ratio to size the spacing. All inventories are still bounded: at most nine rods, coins or grains, and the existing 9/30/48 ingot caps. Zero and negative values remain empty; concealment removes the entire scene, descriptions and legend. This is a presentation change only and requires no ledger migration or financial writes.
+
+The read-only synthetic UI QA entry supports `?view=vault` for zero, fractional yuan, small savings, every denomination boundary, cabinet transitions, large totals and negative values, using the same production scene component.
+
+Validation: typecheck and all 26 tests passed; the synthetic browser preview passed wide and 390-pixel visual review, no horizontal overflow, and concealment without residual inventory, tier or legend text. Android release compilation passed, followed by an in-place phone update with signature/APK identity checks, original installation/data-directory identity retained and successful launch. No real financial records were inspected or changed; native phone artwork still needs the user's visual review.
 
 ## Display and controls
 

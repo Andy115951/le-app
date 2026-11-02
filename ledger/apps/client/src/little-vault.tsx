@@ -28,6 +28,8 @@ const cabinets = [
   require("../assets/vault/safe-vault.png"),
 ];
 const atlas = require("../assets/vault/gold-natural-atlas.png");
+const cylinder = require("../assets/vault/gold-cylinder-natural.png");
+const cylinderBounds = [124, 116, 1936, 692] as const;
 const bounds = [
   [42, 188, 474, 376],
   [45, 189, 477, 376],
@@ -51,16 +53,25 @@ function Unit({
   id: string;
   rotation?: number;
 }) {
-  const [left, , right, bottom] = bounds[index];
-  const size = (width * 512) / (right - left);
-  const sx = x - (left / 512) * size;
-  const sy = baseline - (bottom / 512) * size;
+  const isCylinder = index === 6;
+  const [left, top, right, bottom] = isCylinder
+    ? cylinderBounds
+    : bounds[index];
+  const scale = width / (right - left);
+  const size = 512 * scale;
+  const sx = x - left * scale;
+  const sy = baseline - bottom * scale;
   const cellId = `cell${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <G transform={`rotate(${rotation} ${x + width / 2} ${baseline})`}>
       <Defs>
         <ClipPath id={cellId}>
-          <Rect x={sx} y={sy} width={size} height={size} />
+          <Rect
+            x={isCylinder ? x : sx}
+            y={isCylinder ? baseline - (bottom - top) * scale : sy}
+            width={isCylinder ? width : size}
+            height={isCylinder ? (bottom - top) * scale : size}
+          />
         </ClipPath>
       </Defs>
       <Ellipse
@@ -75,11 +86,11 @@ function Unit({
             Position and clip the atlas in the parent canvas on every platform. */}
         <G clipPath={`url(#${cellId})`}>
           <Image
-            href={atlas}
-            x={sx - (index % 3) * size}
-            y={sy - Math.floor(index / 3) * size}
-            width={size * 3}
-            height={size * 2}
+            href={isCylinder ? cylinder : atlas}
+            x={isCylinder ? sx : sx - (index % 3) * size}
+            y={isCylinder ? sy : sy - Math.floor(index / 3) * size}
+            width={isCylinder ? 2061 * scale : size * 3}
+            height={isCylinder ? 763 * scale : size * 2}
           />
         </G>
       </G>
@@ -138,7 +149,7 @@ export function LittleVault({ netMinor }: { netMinor: number }) {
   );
 }
 
-function VaultScene({
+export function VaultScene({
   netMinor,
   visible,
 }: {
@@ -148,56 +159,80 @@ function VaultScene({
   const model = vaultPresentation(netMinor, visible);
   const id = `vault${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   if (!model) return <ClosedVault />;
-  const { x, y, w, h, tier, shownBars: count, coins, grains, dust } = model;
+  const {
+    x,
+    y,
+    w,
+    h,
+    tier,
+    shownBars: count,
+    rods,
+    coins,
+    grains,
+    dust,
+  } = model;
   const left = x + w * 0.222,
     right = x + w * 0.766,
     width = right - left,
     floor = y + h * 0.728;
   const cols = Math.min(model.cols, count),
     rows = cols ? Math.ceil(count / cols) : 0;
-  const barBase = floor - (tier > 0 ? 34 : 14),
-    groupWidth = cols ? (cols - 1) * 24 + 26 : 0;
-  const barLeft =
-    tier > 0
-      ? left + (width - groupWidth) / 2
-      : Math.max(
-          left + 3,
-          left + (width - groupWidth - (coins ? 18 : 0)) / 2 - 3,
-        );
-  const coinWidth = coins ? (Math.min(3, coins) - 1) * 11.5 + 14 : 0;
-  const coinLeft =
-    tier === 0 && model.bars
-      ? Math.min(right - coinWidth - 3, barLeft + groupWidth - 4)
-      : model.bars
-        ? right - coinWidth - 3
-        : left + (width - coinWidth) / 2;
-  const grainLeft = model.bars
-    ? tier === 0
-      ? barLeft - 4
-      : left + 7
-    : coins
-      ? coinLeft - 12
-      : left + width * 0.37;
-  const ratio = dust / 10000,
-    rx = 3 + ratio * 12,
-    ry = 0.8 + ratio * 2.8;
-  const cx = grains
-      ? grainLeft + 21
-      : coins
-        ? coinLeft - 9
-        : left + width * 0.5,
-    cy = floor - 0.4;
-  const grainPositions = [
-    [0, 0],
-    [7, -1],
-    [3, -5],
-    [10, -6],
-    [-3, -3],
-    [12, -2],
-    [5, -8],
-    [15, -5],
-    [1, -9],
-  ];
+  const hasSmall = coins + grains + dust > 0;
+  // Heavy ingots always rest at the bottom. Each lighter group gets a
+  // supported shelf above the full height of the group beneath it.
+  const barBase = floor - 1;
+  const barSize = 34;
+  const barHeight = rows ? (188 / 432) * barSize + (rows - 1) * 8.5 : 0;
+  const groupWidth = cols ? (cols - 1) * 26 + barSize : 0;
+  const barLeft = left + (width - groupWidth) / 2;
+  const rodSize = count ? 34 : 42;
+  const rodUnitHeight =
+    (rodSize * (cylinderBounds[3] - cylinderBounds[1])) /
+    (cylinderBounds[2] - cylinderBounds[0]);
+  const rodStep = rodSize * 0.86;
+  const rodCols = Math.min(3, rods);
+  const rodRows = rodCols ? Math.ceil(rods / rodCols) : 0;
+  const rodRowStep = rodUnitHeight * 0.65;
+  const rodHeight = rods ? rodUnitHeight + (rodRows - 1) * rodRowStep : 0;
+  const rodWidth = rodCols ? (rodCols - 1) * rodStep + rodSize : 0;
+  const rodLeft = left + (width - rodWidth) / 2;
+  const rodBase = count ? barBase - barHeight - 12 : floor - 1;
+  const smallBase = rods
+    ? rodBase - rodHeight - 12
+    : count
+      ? barBase - barHeight - 12
+      : floor;
+  // Keep small savings close; ease back between CNY 1,000 and 10,000
+  // rather than abruptly shrinking the whole scene at a denomination carry.
+  const pullback = Math.min(
+    1,
+    Math.max(0, Math.log10(Math.max(1000, netMinor / 100)) - 3),
+  );
+  const coinSize = 24 - 6 * pullback;
+  const grainSize = 14 - 5 * pullback;
+  const coinStep = coinSize * 0.72;
+  const grainStep = grainSize * 0.7;
+  const coinWidth = coins ? (Math.min(3, coins) - 1) * coinStep + coinSize : 0;
+  const grainWidth = grains
+    ? (Math.min(3, grains) - 1) * grainStep + grainSize + (grains > 3 ? 2 : 0)
+    : 0;
+  const ratio = dust / 1000;
+  const rx = 3.5 + ratio * 6;
+  const ry = 1 + ratio * 2;
+  const dustWidth = dust ? rx * 2 + 3 : 0;
+  const frontGroups = [coinWidth, grainWidth, dustWidth].filter(
+    (v) => v > 0,
+  ).length;
+  const frontWidth =
+    coinWidth + grainWidth + dustWidth + Math.max(0, frontGroups - 1) * 7;
+  const coinLeft = left + (width - frontWidth) / 2;
+  const grainLeft = coinLeft + (coins ? coinWidth + 7 : 0);
+  const cx = grainLeft + (grains ? grainWidth + 7 : 0) + dustWidth / 2;
+  const cy = smallBase - 0.4;
+  const trayWidth = Math.min(width + 8, Math.max(58, frontWidth + 20));
+  const trayLeft = left + (width - trayWidth) / 2;
+  const sceneWidth = w * 0.94 + (330 - w * 0.94) * pullback;
+  const sceneLeft = (330 - sceneWidth) / 2;
   const coinUnits = Array.from({ length: coins }, (_, i) => {
     const row = Math.floor(i / 3),
       col = i % 3,
@@ -209,9 +244,9 @@ function VaultScene({
         <Unit
           key={`coin${i}`}
           index={pose}
-          x={coinLeft + col * 11.5 + [-0.15, 0.2, 0][col]}
-          baseline={floor - 3 - row * 3.7}
-          width={pose === 4 ? 13 : 14}
+          x={coinLeft + col * coinStep + [-0.15, 0.2, 0][col]}
+          baseline={smallBase - 3 - row * 3.7}
+          width={coinSize}
           id={id}
           rotation={[-1, 0.6, -0.3][col]}
         />
@@ -227,14 +262,14 @@ function VaultScene({
         style={{
           width: "100%",
           maxWidth: 330,
-          aspectRatio: 330 / (280 - model.crop),
+          aspectRatio: sceneWidth / (280 - model.crop),
           alignSelf: "center",
         }}
       >
         <Svg
           width="100%"
           height="100%"
-          viewBox={`0 ${model.crop} 330 ${280 - model.crop}`}
+          viewBox={`${sceneLeft} ${model.crop} ${sceneWidth} ${280 - model.crop}`}
           accessible={false}
         >
           <Defs>
@@ -278,33 +313,6 @@ function VaultScene({
           </Defs>
           <Image href={cabinets[tier]} x={x} y={y} width={w} height={h} />
           <G clipPath={`url(#${id}-inside)`}>
-            {tier > 0 &&
-              count > 0 &&
-              Array.from({ length: Math.ceil(rows / 3) }, (_, i) => {
-                const sy = barBase - i * 38 + 0.8;
-                return (
-                  <G key={`shelf${i}`}>
-                    <Path
-                      d={`M${left - 3} ${sy + 4}h${width + 6}v3h-${width + 6}Z`}
-                      fill="#35422d"
-                      opacity={0.12}
-                    />
-                    <Path
-                      d={`M${left - 2} ${sy + 2.5}l3-2.5h${width - 2}l3 2.5Z`}
-                      fill="#a8b093"
-                    />
-                    <Path
-                      d={`M${left - 2} ${sy + 2.5}h${width + 4}v2.2h-${width + 4}Z`}
-                      fill="#7f8a6e"
-                    />
-                    <Path
-                      d={`M${left - 2} ${sy + 2.5}h${width + 4}`}
-                      stroke="#c3c9b1"
-                      strokeWidth={0.55}
-                    />
-                  </G>
-                );
-              })}
             {Array.from({ length: count }, (_, i) => {
               const row = Math.floor(i / model.cols),
                 col = i % model.cols;
@@ -312,16 +320,75 @@ function VaultScene({
                 <Unit
                   key={`bar${i}`}
                   index={(row * 2 + col) % 3}
-                  x={barLeft + col * 24 + [-0.35, 0.25, 0.05, -0.15][i % 4]}
-                  baseline={
-                    barBase - Math.floor(row / 3) * 38 - (row % 3) * 10.4
-                  }
-                  width={26}
+                  x={barLeft + col * 26 + [-0.35, 0.25, 0.05, -0.15][i % 4]}
+                  baseline={barBase - row * 8.5}
+                  width={barSize}
                   id={id}
                   rotation={[-0.6, 0.35, -0.15, 0.55][i % 4]}
                 />
               );
             })}
+            {rods > 0 && count > 0 && (
+              <G>
+                <Path
+                  d={`M${left - 3} ${rodBase + 1}h${width + 6}v3h-${width + 6}Z`}
+                  fill="#7f8a6e"
+                />
+                <Path
+                  d={`M${left - 3} ${rodBase + 1}h${width + 6}`}
+                  stroke="#d0d2bb"
+                  strokeWidth={1}
+                />
+              </G>
+            )}
+            {Array.from({ length: rods }, (_, i) => (
+              <Unit
+                key={`rod${i}`}
+                index={6}
+                x={
+                  rodLeft + (i % 3) * rodStep + (Math.floor(i / 3) % 2 ? 1 : 0)
+                }
+                baseline={rodBase - Math.floor(i / 3) * rodRowStep}
+                width={rodSize}
+                id={id}
+              />
+            ))}
+            {hasSmall && (count > 0 || rods > 0) && (
+              <G>
+                <Path
+                  d={`M${left - 3} ${smallBase + 10}h${width + 6}v3h-${width + 6}Z`}
+                  fill="#7f8a6e"
+                />
+                <Path
+                  d={`M${left - 3} ${smallBase + 10}h${width + 6}`}
+                  stroke="#d0d2bb"
+                  strokeWidth={1}
+                />
+              </G>
+            )}
+            {hasSmall && (
+              <G>
+                <Ellipse
+                  cx={trayLeft + trayWidth / 2}
+                  cy={smallBase + 8}
+                  rx={trayWidth / 2 + 1}
+                  ry={3}
+                  fill={`url(#${id}-contact)`}
+                />
+                <Path
+                  d={`M${trayLeft + 7} ${smallBase - 12}H${trayLeft + trayWidth - 7}Q${trayLeft + trayWidth - 2} ${smallBase - 12} ${trayLeft + trayWidth} ${smallBase + 3}Q${trayLeft + trayWidth} ${smallBase + 9} ${trayLeft + trayWidth - 8} ${smallBase + 9}H${trayLeft + 8}Q${trayLeft} ${smallBase + 9} ${trayLeft} ${smallBase + 3}Q${trayLeft + 2} ${smallBase - 12} ${trayLeft + 7} ${smallBase - 12}Z`}
+                  fill="#e8e3d2"
+                  stroke="#b9bda8"
+                  strokeWidth={0.8}
+                />
+                <Path
+                  d={`M${trayLeft + 8} ${smallBase - 10}H${trayLeft + trayWidth - 8}L${trayLeft + trayWidth - 4} ${smallBase + 3}Q${trayLeft + trayWidth / 2} ${smallBase + 7} ${trayLeft + 4} ${smallBase + 3}Z`}
+                  fill="#b6bba3"
+                  stroke="#f4efdf"
+                  strokeWidth={0.6}
+                />
+              </G>
+            )}
             {coinUnits
               .filter((unit) => unit.pose === 3)
               .map((unit) => unit.node)}
@@ -332,9 +399,13 @@ function VaultScene({
               <Unit
                 key={`grain${i}`}
                 index={5}
-                x={grainLeft + grainPositions[i][0]}
-                baseline={floor - 1 + grainPositions[i][1]}
-                width={8}
+                x={
+                  grainLeft +
+                  (i % 3) * grainStep +
+                  (Math.floor(i / 3) % 2 ? 2 : 0)
+                }
+                baseline={smallBase - 1 - Math.floor(i / 3) * grainSize * 0.34}
+                width={grainSize}
                 id={id}
                 rotation={[-4, 2, -1, 3][i % 4]}
               />
@@ -383,6 +454,11 @@ function VaultScene({
       </Text>
       <Text style={[s.muted, { textAlign: "center" }]}>
         {model.description}
+      </Text>
+      <Text
+        style={[s.muted, { fontSize: 11, lineHeight: 18, textAlign: "center" }]}
+      >
+        金块 1 万 · 金条 1 千 · 金币 100 · 金粒 10 · 零头为金粉
       </Text>
       {model.note !== "" && (
         <Text style={[s.muted, { textAlign: "center" }]}>{model.note}</Text>
