@@ -271,3 +271,239 @@ test("backup roundtrip validates refs, IDs, integers, versions and calendar date
     parseBackup('{"kind":"ledger-backup","formatVersion":99}'),
   );
 });
+
+test("account deletion removes its opening asset/debt, retains other accounts and repairs the default", () => {
+  const initial = fixture();
+  let state = initial;
+  const original = structuredClone(initial);
+  const [bank, card, fund] = state.accounts;
+  const operationId = newId();
+  const command: Command = {
+    type: "account.delete",
+    id: bank.id,
+    expectedVersion: bank.version,
+  };
+  const deleted = run(state, command, operationId);
+  state = deleted.state;
+  assert.equal(state.defaultAccountId, card.id);
+  assert.deepEqual(state.accounts, [card, fund]);
+  assert.equal(assets(state).netMinor, 40_000);
+  assert.deepEqual(state.entries, original.entries);
+  assert.deepEqual(state.labels, original.labels);
+  assert.equal(state.audit.at(-1)?.action, "account.delete");
+  assert.equal(state.audit.at(-1)?.recordId, bank.id);
+  assert.equal(deleted.resultId, bank.id);
+  assert.deepEqual(run(state, command, operationId), {
+    state,
+    resultId: bank.id,
+    replayed: true,
+  });
+  assert.deepEqual(initial, original, "the input ledger is unchanged");
+  // Removing a non-default account must leave the chosen default alone.
+  state = run(state, {
+    type: "account.delete",
+    id: fund.id,
+    expectedVersion: fund.version,
+  }).state;
+  assert.equal(state.defaultAccountId, card.id);
+  state = run(state, {
+    type: "account.delete",
+    id: card.id,
+    expectedVersion: card.version,
+  }).state;
+  assert.equal(state.accounts.length, 0);
+  assert.equal(state.defaultAccountId, undefined);
+  assert.equal(assets(state).netMinor, 0);
+  assert.deepEqual(parseBackup(exportBackup(state)).ledger, state);
+  assert.throws(() => run(state, command), /不存在/);
+});
+test("account deletion rejects stale versions and every reference without changing the input book", () => {
+  const base = fixture();
+  const [bank, card, fund] = base.accounts;
+  assert.throws(
+    () =>
+      run(base, {
+        type: "account.delete",
+        id: bank.id,
+        expectedVersion: bank.version + 1,
+      }),
+    /刷新/,
+  );
+  const scenarios: [Ledger, string][] = [];
+  scenarios.push([
+    run(base, { type: "entry.create", entry: entry(bank.id, "expense", 100) })
+      .state,
+    bank.id,
+  ]);
+  scenarios.push([
+    run(base, { type: "entry.create", entry: entry(bank.id, "income", 100) })
+      .state,
+    bank.id,
+  ]);
+  const transferred = run(base, {
+    type: "entry.create",
+    entry: entry(bank.id, "transfer", 100, { toAccountId: card.id }),
+  }).state;
+  scenarios.push([transferred, bank.id], [transferred, card.id]);
+  scenarios.push([
+    run(base, {
+      type: "reconcile",
+      accountId: fund.id,
+      actualMinor: 0,
+      occurredAt: "2026-03-01T00:00:00",
+      note: "Synthetic zero valuation",
+    }).state,
+    fund.id,
+  ]);
+  for (const [state, id] of scenarios) {
+    const before = structuredClone(state);
+    assert.throws(
+      () =>
+        run(state, {
+          type: "account.delete",
+          id,
+          expectedVersion: state.accounts.find((a) => a.id === id)!.version,
+        }),
+      (e) => e instanceof Error && "code" in e && e.code === "ACCOUNT_IN_USE",
+    );
+    assert.deepEqual(state, before);
+  }
+});
+
+test("archiving keeps historical reports and net assets, blocks new use, and can be reversed", () => {
+  let state = fixture();
+  const [bank, card] = state.accounts;
+  state = run(state, {
+    type: "entry.create",
+    entry: entry(bank.id, "expense", 1000),
+  }).state;
+  const expense = state.entries[0];
+  const before = structuredClone(state);
+  const net = assets(state).netMinor;
+  const reports = report(state, "2026-03");
+  const cmd: Command = {
+    type: "account.archive",
+    id: bank.id,
+    expectedVersion: bank.version,
+    archived: true,
+  };
+  const operation = newId();
+  state = run(state, cmd, operation).state;
+  assert.equal(state.accounts[0].archived, true);
+  assert.equal(state.defaultAccountId, card.id);
+  assert.equal(assets(state).netMinor, net);
+  assert.deepEqual(report(state, "2026-03"), reports);
+  assert.deepEqual(state.entries, before.entries);
+  assert.deepEqual(state.reconciliations, before.reconciliations);
+  assert.equal(run(state, cmd, operation).replayed, true);
+  assert.deepEqual(parseBackup(exportBackup(state)).ledger, state);
+  for (const command of [
+    { type: "entry.create", entry: entry(bank.id, "income", 100) },
+    {
+      type: "entry.create",
+      entry: entry(card.id, "transfer", 100, { toAccountId: bank.id }),
+    },
+    {
+      type: "reconcile",
+      accountId: bank.id,
+      actualMinor: 0,
+      occurredAt: "2026-03-02T00:00:00",
+      note: "",
+    },
+  ] as Command[])
+    assert.throws(
+      () => run(state, command),
+      (e) => e instanceof Error && "code" in e && e.code === "ACCOUNT_ARCHIVED",
+    );
+  // Existing historical entries remain editable without forcing the account back into daily use.
+  state = run(state, {
+    type: "entry.update",
+    id: expense.id,
+    expectedVersion: expense.version,
+    entry: entry(bank.id, "expense", 1200),
+  }).state;
+  assert.equal(state.defaultAccountId, card.id);
+  assert.equal(balance(state, bank.id), 98800);
+  const account = state.accounts[0];
+  state = run(state, {
+    type: "account.archive",
+    id: account.id,
+    expectedVersion: account.version,
+    archived: false,
+  }).state;
+  state = run(state, {
+    type: "entry.create",
+    entry: entry(bank.id, "income", 100),
+  }).state;
+  assert.equal(balance(state, bank.id), 98900);
+  const invalid = structuredClone(state);
+  (invalid.accounts[0] as any).archived = "true";
+  assert.throws(() => validateLedger(invalid), /归档/);
+});
+test("confirmed cascading account deletion removes both transfer sides, refunds and anchors but keeps unrelated history", () => {
+  let state = fixture();
+  const [bank, card, fund] = state.accounts;
+  const purchase = run(state, {
+    type: "entry.create",
+    entry: entry(bank.id, "expense", 1000),
+  });
+  state = purchase.state;
+  state = run(state, {
+    type: "entry.create",
+    entry: entry(bank.id, "refund", 300, { originalId: purchase.resultId }),
+  }).state;
+  state = run(state, {
+    type: "entry.create",
+    entry: entry(bank.id, "transfer", 2000, { toAccountId: card.id }),
+  }).state;
+  state = run(state, {
+    type: "entry.create",
+    entry: entry(fund.id, "transfer", 500, { toAccountId: bank.id }),
+  }).state;
+  state = run(state, {
+    type: "reconcile",
+    accountId: bank.id,
+    actualMinor: 1234,
+    occurredAt: "2026-03-12T00:00:00",
+    note: "Synthetic anchor",
+  }).state;
+  state = run(state, {
+    type: "entry.create",
+    entry: entry(card.id, "expense", 400),
+  }).state;
+  const unrelated = state.entries.filter(
+    (e) => e.accountId !== bank.id && e.toAccountId !== bank.id,
+  );
+  state = run(state, {
+    type: "account.delete",
+    id: bank.id,
+    expectedVersion: bank.version,
+    deleteRecords: true,
+  }).state;
+  assert.deepEqual(state.entries, unrelated);
+  assert.equal(state.reconciliations.length, 0);
+  assert.equal(balance(state, card.id), -10400);
+  assert.equal(balance(state, fund.id), 50000);
+  assert.equal(report(state, "2026-03").expenseMinor, 400);
+  assert.deepEqual(parseBackup(exportBackup(state)).ledger, state);
+});
+test("archiving all accounts clears the default; reopening one restores a usable default", () => {
+  let state = fixture();
+  for (const a of state.accounts)
+    state = run(state, {
+      type: "account.archive",
+      id: a.id,
+      expectedVersion: a.version,
+      archived: true,
+    }).state;
+  assert.equal(state.defaultAccountId, undefined);
+  const a = state.accounts[1];
+  state = run(state, {
+    type: "account.archive",
+    id: a.id,
+    expectedVersion: a.version,
+    archived: false,
+  }).state;
+  assert.equal(state.defaultAccountId, a.id);
+  assert.equal(state.accounts[0].archived, true);
+});

@@ -143,6 +143,7 @@ async function main() {
         token: commit ? result.token : token,
         resultId: result.resultId,
         replayed: result.replayed,
+        backupId: result.backupId,
         revision: result.ledger.revision,
         preview: assets(result.ledger),
       });

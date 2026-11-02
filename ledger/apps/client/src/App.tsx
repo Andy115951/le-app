@@ -55,6 +55,7 @@ import {
 } from "lucide-react-native";
 import {
   assets,
+  accountUsage,
   balance,
   exportBackup,
   money,
@@ -127,6 +128,8 @@ const settingsTitles: Record<SettingsPage, string> = {
 const auditNames: Record<string, string> = {
   "account.create": "新增账户",
   "account.rename": "账户改名",
+  "account.delete": "删除账户",
+  "account.archive": "账户归档设置",
   "label.create": "新增标签",
   "label.update": "修改标签",
   "label.delete": "删除标签",
@@ -691,6 +694,14 @@ function EntryForm({
   onDone: (entry: Omit<Entry, "id" | "version">) => void;
   onDelete?: (e: Entry) => void;
 }) {
+  const accounts = ledger.accounts.filter(
+    (a) =>
+      !a.archived ||
+      a.id === initial?.accountId ||
+      a.id === initial?.toAccountId,
+  );
+  const defaultAccount =
+    accounts.find((a) => a.id === ledger.defaultAccountId) || accounts[0];
   const [kind, setKind] = useState<Entry["kind"]>(
     initial?.kind || preset?.kind || "expense",
   );
@@ -698,16 +709,12 @@ function EntryForm({
     initial ? money(initial.amountMinor) : "",
   );
   const [accountId, setAccount] = useState(
-    initial?.accountId ||
-      preset?.accountId ||
-      ledger.defaultAccountId ||
-      ledger.accounts[0]?.id ||
-      "",
+    initial?.accountId || preset?.accountId || defaultAccount?.id || "",
   );
   const [toAccountId, setTo] = useState(
     initial?.toAccountId ||
       preset?.toAccountId ||
-      ledger.accounts.find((a) => a.id !== accountId)?.id ||
+      accounts.find((a) => a.id !== accountId)?.id ||
       "",
   );
   const [labelId, setLabel] = useState(initial?.labelId);
@@ -1015,10 +1022,7 @@ function EntryForm({
           {error}
         </Text>
       )}
-      <Button
-        disabled={busy || !ledger.accounts.length}
-        onPress={() => void save()}
-      >
+      <Button disabled={busy || !accounts.length} onPress={() => void save()}>
         {busy ? "保存中…" : initial ? "保存修改" : "记好了"}
       </Button>
       {initial && onDelete && (
@@ -1031,7 +1035,7 @@ function EntryForm({
           title={picker === "to" ? "选择转入账户" : "选择账户"}
           close={() => setPicker(undefined)}
         >
-          {ledger.accounts
+          {accounts
             .filter((a) => picker !== "to" || a.id !== accountId)
             .map((a) => (
               <SelectionRow
@@ -1044,9 +1048,7 @@ function EntryForm({
                   else {
                     setAccount(a.id);
                     if (toAccountId === a.id)
-                      setTo(
-                        ledger.accounts.find((x) => x.id !== a.id)?.id || "",
-                      );
+                      setTo(accounts.find((x) => x.id !== a.id)?.id || "");
                   }
                   setPicker(undefined);
                 }}
@@ -1655,6 +1657,11 @@ export function LedgerApp({
   const [notice, setNotice] = useState("");
   const [addAccount, setAddAccount] = useState(false);
   const [renamingAccount, setRenamingAccount] = useState<Account>();
+  const [removingAccount, setRemovingAccount] = useState<Account>();
+  const [removalMode, setRemovalMode] = useState<"archive" | "delete">(
+    "archive",
+  );
+  const [archivedAccountsOpen, setArchivedAccountsOpen] = useState(false);
   const [editing, setEditing] = useState<Entry>();
   const [reconciling, setReconciling] = useState<Account>();
   const [refunding, setRefunding] = useState<Entry>();
@@ -1671,6 +1678,7 @@ export function LedgerApp({
     title: string;
     text: string;
     action: () => Promise<void>;
+    successText?: string;
   }>();
   const [confirmError, setConfirmError] = useState("");
   const [confirmBusy, setConfirmBusy] = useState(false);
@@ -1765,6 +1773,11 @@ export function LedgerApp({
   };
   const summary = report(ledger, month);
   const wealth = assets(ledger);
+  const availableAccounts = ledger.accounts.filter((a) => !a.archived);
+  const archivedAccounts = wealth.accounts.filter((a) => a.archived);
+  const removalUsage = removingAccount
+    ? accountUsage(ledger, removingAccount.id)
+    : { entries: 0, transfers: 0, reconciliations: 0 };
   const sorted = [...ledger.entries].sort(
     (a, b) =>
       b.occurredAt.localeCompare(a.occurredAt) || b.id.localeCompare(a.id),
@@ -1773,9 +1786,10 @@ export function LedgerApp({
     title: string,
     text: string,
     action: () => Promise<void>,
+    successText?: string,
   ) {
     setConfirmError("");
-    setConfirm({ title, text, action });
+    setConfirm({ title, text, action, successText });
   }
   async function confirmAction() {
     if (!confirm || confirmLock.current) return;
@@ -1784,7 +1798,7 @@ export function LedgerApp({
     try {
       await confirm.action();
       setConfirm(undefined);
-      setNotice("已完成");
+      setNotice(confirm.successText || "已完成");
     } catch (e) {
       setConfirmError(errorText(e));
     } finally {
@@ -1803,6 +1817,71 @@ export function LedgerApp({
         );
         setEditing(undefined);
       },
+    );
+  }
+  function manageAccountRemoval() {
+    if (!removingAccount) return;
+    const account = removingAccount;
+    const deleting = removalMode === "delete";
+    const usage = accountUsage(ledger, account.id);
+    const token = snap.token;
+    const operationId = randomUUID();
+    setRemovingAccount(undefined);
+    showConfirm(
+      deleting ? "确认删除账户及记录" : "确认归档账户",
+      deleting
+        ? `将删除“${account.name}”、${usage.entries} 笔关联流水和 ${usage.reconciliations} 条盘点。${usage.transfers ? `其中 ${usage.transfers} 笔转账或还款会整体删除，另一账户的余额也会重新计算。` : ""}该账户将不再计入资产或负债。删除前会自动备份整个账本，可在设置 → 备份与迁移 → 自动备份中恢复。`
+        : `将归档“${account.name}”，保留全部历史记录、余额和统计。该账户将从常用列表收起，余额仍计入总资产和负债；需要继续记账时可在资产页恢复。`,
+      async () => {
+        await submit(
+          deleting
+            ? {
+                type: "account.delete",
+                id: account.id,
+                expectedVersion: account.version,
+                deleteRecords: true,
+              }
+            : {
+                type: "account.archive",
+                id: account.id,
+                expectedVersion: account.version,
+                archived: true,
+              },
+          operationId,
+          token,
+        );
+        if (deleting && accountFilter === account.id) setAccountFilter("");
+        setFormPreset(undefined);
+        setFormKey((k) => k + 1);
+        if (deleting) setBackups([]);
+      },
+      deleting
+        ? "账户及关联记录已删除，原账本已自动备份"
+        : "账户已归档，可在资产页恢复",
+    );
+  }
+  function reopenAccount(account: Account) {
+    const token = snap.token;
+    const operationId = randomUUID();
+    setActiveAccount(undefined);
+    showConfirm(
+      "恢复账户",
+      `恢复“${account.name}”后，可继续选择此账户记账，历史和余额保持不变。`,
+      async () => {
+        await submit(
+          {
+            type: "account.archive",
+            id: account.id,
+            expectedVersion: account.version,
+            archived: false,
+          },
+          operationId,
+          token,
+        );
+        setFormPreset(undefined);
+        setFormKey((k) => k + 1);
+      },
+      "账户已恢复",
     );
   }
   function deleteLabel(l: Label) {
@@ -2315,7 +2394,7 @@ export function LedgerApp({
             )}
             {tab === "add" && (
               <View style={{ gap: 18 }}>
-                {ledger.accounts.length ? (
+                {availableAccounts.length ? (
                   <EntryForm
                     key={formKey}
                     preset={formPreset}
@@ -2335,7 +2414,7 @@ export function LedgerApp({
                   />
                 ) : (
                   <Empty
-                    text="先添加钱所在的账户，比如银行卡、支付宝余额或现金，记账时就能选这笔钱从哪里出、到哪里去。"
+                    text="先添加银行卡、支付宝余额或现金账户；已有归档账户可在资产页恢复后继续记账。"
                     action={() => setAddAccount(true)}
                   />
                 )}
@@ -2393,11 +2472,15 @@ export function LedgerApp({
                   {[
                     [
                       "日常账户",
-                      wealth.accounts.filter((a) => a.kind === "cash"),
+                      wealth.accounts.filter(
+                        (a) => !a.archived && a.kind === "cash",
+                      ),
                     ],
                     [
                       "理财与待还款",
-                      wealth.accounts.filter((a) => a.kind !== "cash"),
+                      wealth.accounts.filter(
+                        (a) => !a.archived && a.kind !== "cash",
+                      ),
                     ],
                   ].map(([title, rows]) => (
                     <View
@@ -2474,6 +2557,52 @@ export function LedgerApp({
                     </View>
                   ))}
                 </View>
+                {archivedAccounts.length > 0 && (
+                  <View style={{ gap: 12 }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: archivedAccountsOpen }}
+                      style={s.between}
+                      onPress={() =>
+                        setArchivedAccountsOpen(!archivedAccountsOpen)
+                      }
+                    >
+                      <Text style={s.heading}>已归档账户</Text>
+                      <Text style={s.muted}>
+                        {archivedAccounts.length} 个 ·{" "}
+                        {archivedAccountsOpen ? "收起" : "展开"}
+                      </Text>
+                    </Pressable>
+                    <Text style={s.muted}>
+                      归档账户的余额仍计入上方资产与负债，历史记录保留。
+                    </Text>
+                    {archivedAccountsOpen &&
+                      archivedAccounts.map((a) => (
+                        <View key={a.id} style={s.accountRow}>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`归档账户：${a.name}`}
+                            onPress={() => setActiveAccount(a)}
+                            style={[
+                              s.row,
+                              { flex: 1, minWidth: 0, minHeight: 44 },
+                            ]}
+                          >
+                            <AccountGlyph kind={a.kind} />
+                            <View style={{ flex: 1, gap: 4 }}>
+                              <Text style={s.text}>{a.name}</Text>
+                              <Text style={s.muted}>已归档 · 点击可恢复</Text>
+                            </View>
+                          </Pressable>
+                          <AssetValue
+                            value={amountText(a.balanceMinor)}
+                            variant="amount"
+                            style={s.accountBalance}
+                          />
+                        </View>
+                      ))}
+                  </View>
+                )}
                 <Text style={s.muted}>
                   信用卡消费记支出，还款记银行卡 →
                   信用卡转账。理财按最近一次盘点显示。
@@ -2728,7 +2857,7 @@ export function LedgerApp({
                       <View style={s.settingsDivider} />
                       <SettingsRow
                         title="自动备份"
-                        description="导入前保留的账本版本"
+                        description="替换账本或删除账户前保留的版本"
                         icon={RotateCcw}
                         disabled={backupBusy}
                         onPress={() => void openSavedBackups()}
@@ -2749,7 +2878,7 @@ export function LedgerApp({
                 {settingsPage === "savedBackups" && (
                   <View style={s.card}>
                     <Text style={s.muted}>
-                      导入前会自动保存当时的本机账本，恢复前可以先预览。
+                      替换账本或删除账户前会自动保存原账本，恢复前可以先预览。
                     </Text>
                     {backupListLoading && (
                       <ActivityIndicator
@@ -2960,7 +3089,16 @@ export function LedgerApp({
                 setActiveAccount(undefined);
               }}
             />
+            {activeAccount.archived && (
+              <SettingsRow
+                title="恢复账户"
+                description="回到常用账户列表，继续记账"
+                icon={RotateCcw}
+                onPress={() => reopenAccount(activeAccount)}
+              />
+            )}
             <SettingsRow
+              disabled={!!activeAccount.archived}
               title={
                 activeAccount.kind === "investment" ? "更新估值" : "盘点余额"
               }
@@ -2972,14 +3110,15 @@ export function LedgerApp({
               }}
             />
             <SettingsRow
+              disabled={!!activeAccount.archived}
               title={activeAccount.kind === "credit" ? "信用卡还款" : "转账"}
               description="账户间转账不计入收支"
               icon={ArrowLeftRight}
               onPress={() => {
                 const other =
-                  ledger.accounts.find(
+                  availableAccounts.find(
                     (a) => a.id !== activeAccount.id && a.kind !== "credit",
-                  ) || ledger.accounts.find((a) => a.id !== activeAccount.id);
+                  ) || availableAccounts.find((a) => a.id !== activeAccount.id);
                 setFormPreset(
                   activeAccount.kind === "credit"
                     ? {
@@ -2998,6 +3137,51 @@ export function LedgerApp({
                 setActiveAccount(undefined);
               }}
             />
+            <Button
+              danger
+              onPress={() => {
+                setRemovalMode(activeAccount.archived ? "delete" : "archive");
+                setRemovingAccount(activeAccount);
+                setActiveAccount(undefined);
+              }}
+            >
+              删除或归档账户
+            </Button>
+          </Sheet>
+        )}
+        {removingAccount && (
+          <Sheet
+            title="删除或归档账户"
+            close={() => setRemovingAccount(undefined)}
+          >
+            <Text style={s.heading}>{removingAccount.name}</Text>
+            <Text style={s.muted}>
+              {removalUsage.entries} 笔关联流水 · {removalUsage.reconciliations}{" "}
+              条盘点
+            </Text>
+            {!removingAccount.archived && (
+              <SelectionRow
+                title="归档账户，保留记录（推荐）"
+                description="收起常用账户，可恢复；余额仍计入总资产，历史与统计保留"
+                selected={removalMode === "archive"}
+                onPress={() => setRemovalMode("archive")}
+              />
+            )}
+            <SelectionRow
+              title="删除账户及关联记录"
+              description="先自动备份，再删除账户、流水与盘点；转账或还款也会整体删除"
+              selected={removalMode === "delete"}
+              onPress={() => setRemovalMode("delete")}
+            />
+            <Button
+              danger={removalMode === "delete"}
+              onPress={manageAccountRemoval}
+            >
+              继续
+            </Button>
+            <Button secondary onPress={() => setRemovingAccount(undefined)}>
+              取消
+            </Button>
           </Sheet>
         )}
         {fontLicenseOpen && (

@@ -61,6 +61,7 @@ export interface Account extends RecordBase {
   kind: AccountKind;
   openingMinor: number;
   openedAt: string;
+  archived?: boolean;
 }
 export interface Label extends RecordBase {
   name: string;
@@ -125,6 +126,18 @@ export type Command =
       id: string;
       expectedVersion: number;
       name: string;
+    }
+  | {
+      type: "account.delete";
+      id: string;
+      expectedVersion: number;
+      deleteRecords?: boolean;
+    }
+  | {
+      type: "account.archive";
+      id: string;
+      expectedVersion: number;
+      archived: boolean;
     }
   | {
       type: "label.create";
@@ -347,6 +360,10 @@ export function validateLedger(data: unknown): asserts data is Ledger {
       ["cash", "investment", "credit"].includes(a.kind),
       "账户类型无效",
     );
+    invariant(
+      a.archived === undefined || typeof a.archived === "boolean",
+      "账户归档状态无效",
+    );
     minor(a.openingMinor);
     validTime(a.openedAt);
   }
@@ -452,6 +469,22 @@ export function validateLedger(data: unknown): asserts data is Ledger {
   // A malformed backup must not introduce balances beyond exact integer arithmetic.
   for (const a of s.accounts) minor(balance(s, a.id, "2199-12-31T23:59:59"));
 }
+export function accountUsage(state: Ledger, accountId: string) {
+  return {
+    entries: state.entries.filter(
+      (entry) =>
+        entry.accountId === accountId || entry.toAccountId === accountId,
+    ).length,
+    transfers: state.entries.filter(
+      (entry) =>
+        entry.kind === "transfer" &&
+        (entry.accountId === accountId || entry.toAccountId === accountId),
+    ).length,
+    reconciliations: state.reconciliations.filter(
+      (record) => record.accountId === accountId,
+    ).length,
+  };
+}
 export function execute(
   state: Ledger,
   command: Command,
@@ -512,6 +545,52 @@ export function execute(
       resultId = a.id;
       break;
     }
+    case "account.archive": {
+      const a = checked(s.accounts, command.id, command.expectedVersion);
+      invariant(typeof command.archived === "boolean", "账户归档状态无效");
+      a.archived = command.archived;
+      a.version++;
+      if (command.archived && s.defaultAccountId === a.id) {
+        const next = s.accounts.find((account) => !account.archived);
+        if (next) s.defaultAccountId = next.id;
+        else delete s.defaultAccountId;
+      } else if (!command.archived && !s.defaultAccountId)
+        s.defaultAccountId = a.id;
+      resultId = a.id;
+      break;
+    }
+    case "account.delete": {
+      checked(s.accounts, command.id, command.expectedVersion);
+      invariant(
+        command.deleteRecords === undefined ||
+          typeof command.deleteRecords === "boolean",
+        "删除选项无效",
+      );
+      const usage = accountUsage(s, command.id);
+      invariant(
+        command.deleteRecords === true ||
+          (usage.entries === 0 && usage.reconciliations === 0),
+        "账户已有流水或盘点记录，请先处理关联记录后再删除",
+        "ACCOUNT_IN_USE",
+      );
+      if (command.deleteRecords) {
+        s.entries = s.entries.filter(
+          (entry) =>
+            entry.accountId !== command.id && entry.toAccountId !== command.id,
+        );
+        s.reconciliations = s.reconciliations.filter(
+          (record) => record.accountId !== command.id,
+        );
+      }
+      s.accounts = s.accounts.filter((account) => account.id !== command.id);
+      if (s.defaultAccountId === command.id) {
+        const next = s.accounts.find((account) => !account.archived);
+        if (next) s.defaultAccountId = next.id;
+        else delete s.defaultAccountId;
+      }
+      resultId = command.id;
+      break;
+    }
     case "label.create": {
       const l: Label = {
         id: ctx.newId(),
@@ -559,14 +638,37 @@ export function execute(
       break;
     }
     case "entry.create": {
+      invariant(
+        !s.accounts.some(
+          (a) =>
+            a.archived &&
+            (a.id === command.entry.accountId ||
+              a.id === command.entry.toAccountId),
+        ),
+        "请先恢复归档账户，再新增流水",
+        "ACCOUNT_ARCHIVED",
+      );
       const e = { ...command.entry, id: ctx.newId(), version: 1 };
       s.entries.push(e);
-      s.defaultAccountId = e.accountId;
+      if (!s.accounts.find((a) => a.id === e.accountId)?.archived)
+        s.defaultAccountId = e.accountId;
       resultId = e.id;
       break;
     }
     case "entry.update": {
       const e = checked(s.entries, command.id, command.expectedVersion);
+      const previousAccounts = [e.accountId, e.toAccountId];
+      invariant(
+        !s.accounts.some(
+          (a) =>
+            a.archived &&
+            !previousAccounts.includes(a.id) &&
+            (a.id === command.entry.accountId ||
+              a.id === command.entry.toAccountId),
+        ),
+        "请先恢复归档账户，再关联流水",
+        "ACCOUNT_ARCHIVED",
+      );
       invariant(e.kind === command.entry.kind, "修改流水时不能更改交易类型");
       Object.assign(e, {
         ...command.entry,
@@ -576,7 +678,8 @@ export function execute(
         labelId: command.entry.labelId,
         originalId: command.entry.originalId,
       });
-      s.defaultAccountId = e.accountId;
+      if (!s.accounts.find((a) => a.id === e.accountId)?.archived)
+        s.defaultAccountId = e.accountId;
       resultId = e.id;
       break;
     }
@@ -591,6 +694,11 @@ export function execute(
       break;
     }
     case "reconcile": {
+      invariant(
+        !s.accounts.find((a) => a.id === command.accountId)?.archived,
+        "请先恢复归档账户，再新增盘点",
+        "ACCOUNT_ARCHIVED",
+      );
       const r = {
         id: ctx.newId(),
         version: 1,

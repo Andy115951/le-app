@@ -4,6 +4,16 @@ English | [简体中文](./VERIFICATION.zh-CN.md)
 
 All financial test fixtures are synthetic. Destructive restore and sharing checks use the separate `app.local.ledger.qa` sandbox. The regular app's existing records were retained, never exported or replaced. Its final navigation check inspected only app chrome, without collecting account names, notes, amounts, or screenshots. No personal ledger, device identifier, private path, or device log is included here.
 
+## Account archive and deletion — 2026-10-31
+
+Account details now offer archive (selected by default) and delete-with-records, each followed by confirmation. Archive preserves history, balances and reports, moves the account into the collapsible archived section, removes it from new-entry choices and supports restoring it. Confirmed deletion includes linked transfers/refunds/reconciliations, checks the original snapshot and record version, and atomically saves the original whole book before removing records. A failed write rolls back both the removal and its backup.
+
+TypeScript and all 26 JavaScript tests pass, including seven new checks for account/default/last-account deletion, reference protection, archive/reopen behavior, unchanged historical reporting, blocked new use, cascading transfer/refund cleanup, dry-run and stale-snapshot protection, exactly-once backup creation, restart/recovery, and injected transactional failure. The existing real HTTP LAN integration also passes.
+
+Native macOS QA verified the two options and default selection, archive confirmation, omission from new-entry pickers, concealed archived balances, restore-account controls, deletion of a generated account with associated entries, automatic-backup discovery, whole-book restoration and the restored synthetic summary. QA data was restored and the app exited. No real financial operations were performed.
+
+Android and macOS updates build successfully; the Android package/signing certificate remain unchanged. The local macOS app was replaced and launched with the original database file retained. No physical phone was connected for installation of this feature; native Android interaction remains pending. Windows packaging uses the same shared implementation; native Windows acceptance remains separate.
+
 ## Local-network whole-book transfer — 2026-10-31
 
 Implemented Settings → Backup and migration → Local-network transfer. The desktop opens an expiring authenticated encrypted session, and the phone selects either overwrite direction. The receiving UI requires explicit confirmation and uses the existing atomic restore with full validation, stale-token checking and an original-book backup. No production record was read, exported, replaced or cleared for these checks.

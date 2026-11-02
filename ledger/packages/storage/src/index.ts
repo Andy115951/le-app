@@ -143,7 +143,9 @@ export class LedgerRepository {
     command: Command,
     ctx: Context,
     options: { token: string; dryRun?: boolean },
-  ): Promise<Snapshot & { resultId?: string; replayed: boolean }> {
+  ): Promise<
+    Snapshot & { resultId?: string; replayed: boolean; backupId?: string }
+  > {
     return this.serial(() =>
       this.driver.transaction(async (tx) => {
         const current = await this.load(tx);
@@ -158,13 +160,23 @@ export class LedgerRepository {
         );
         const result = execute(current.ledger, command, ctx);
         const epoch = current.token.split(":")[0];
-        if (!options.dryRun && !result.replayed)
+        let backupId: string | undefined;
+        if (!options.dryRun && !result.replayed) {
+          if (command.type === "account.delete") {
+            backupId = this.newId();
+            await tx.run(
+              "INSERT INTO ledger_backups(id,created_at,payload) VALUES(?,?,?)",
+              [backupId, ctx.now, exportBackup(current.ledger, ctx.now)],
+            );
+          }
           await this.write(tx, result.state, epoch);
+        }
         return {
           ledger: result.state,
           token: `${epoch}:${result.state.revision}`,
           resultId: result.resultId,
           replayed: result.replayed,
+          backupId,
         };
       }),
     );
