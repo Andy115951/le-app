@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "留一句",
+    "slug": "diary-inbox",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "app.local.diaryinbox",
+      "allowBackup": false,
+      "blockedPermissions": ["android.permission.RECORD_AUDIO", "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"]
+    },
+    "web": { "bundler": "metro", "output": "single", "name": "留一句 · 日记收件箱" },
+    "plugins": [
+      "expo-sqlite",
+      "expo-document-picker",
+      ["expo-camera", { "cameraPermission": "扫描电脑上的配对二维码", "microphonePermission": false, "recordAudioAndroid": false }],
+      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }]
+    ]
+  }
+}

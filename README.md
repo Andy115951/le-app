@@ -13,6 +13,7 @@ A collection of everyday apps for tarot, time tracking, market research, and hea
 | [Nasdaq Dashboard](./stock-dashboard/README.md) | Web: prices, public news, and research records | [Developer guide](./stock-dashboard/docs/public/DEVELOPMENT.md) |
 | [Sugar Notes Web](./glucose-app/README.md) | Web: glucose, meals, and member profiles | [Developer guide](./glucose-app/docs/public/DEVELOPMENT.md) |
 | [Sugar Notes Mobile](./glucose-mobile/README.md) | Android / Web: cross-platform health journaling | [Developer guide](./glucose-mobile/docs/public/DEVELOPMENT.md) |
+| [Diary Inbox · 留一句](./diary-inbox/README.md) | Android / local desktop: encrypted offline diary and device sync | [Setup and protocol](./diary-inbox/README.md) |
 
 ## Getting started
 

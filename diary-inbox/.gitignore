@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+android/
+ios/
+dist/
+local-data/
+exports/
+backups/
+artifacts/
+*.diary
+*.apk
+*.aab

@@ -13,6 +13,7 @@
 | [Nasdaq 市场看板](./stock-dashboard/README.zh-CN.md) | Web：行情、公开资讯与研究记录 | [开发文档](./stock-dashboard/docs/public/DEVELOPMENT.zh-CN.md) |
 | [糖记 Web](./glucose-app/README.zh-CN.md) | Web：血糖、饮食与成员记录 | [开发文档](./glucose-app/docs/public/DEVELOPMENT.zh-CN.md) |
 | [糖记 Mobile](./glucose-mobile/README.zh-CN.md) | Android / Web：跨端健康记录 | [开发文档](./glucose-mobile/docs/public/DEVELOPMENT.zh-CN.md) |
+| [留一句 · 日记收件箱](./diary-inbox/README.zh-CN.md) | Android / 本机电脑：加密离线日记与设备同步 | [启动与协议](./diary-inbox/README.zh-CN.md) |
 
 ## 开始开发
 

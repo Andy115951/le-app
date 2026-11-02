@@ -1,0 +1,44 @@
+{
+  "name": "diary-inbox",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "main": "index.ts",
+  "type": "module",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "start": "node scripts/expo.mjs start",
+    "android": "node scripts/expo.mjs run:android",
+    "build:web": "node scripts/expo.mjs export --platform web",
+    "build:android": "node scripts/expo.mjs export --platform android --output-dir artifacts/android-bundle",
+    "desktop": "node --experimental-transform-types desktop/main.ts",
+    "desktop:lan": "node --experimental-transform-types desktop/main.ts --lan",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-transform-types --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
+    "expo": "~57.0.30",
+    "expo-build-properties": "~57.0.22",
+    "expo-camera": "~57.0.6",
+    "expo-crypto": "~57.0.4",
+    "expo-document-picker": "~57.0.3",
+    "expo-file-system": "~57.0.7",
+    "expo-sharing": "~57.0.23",
+    "expo-sqlite": "~57.0.4",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}
