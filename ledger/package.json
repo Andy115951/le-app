@@ -25,13 +25,15 @@
     "cli": "node --disable-warning=ExperimentalWarning --import tsx apps/cli/src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=ExperimentalWarning --import tsx --test packages/core/test/*.test.ts packages/storage/test/*.test.ts apps/cli/test/*.test.ts apps/client/test/*.test.ts",
-    "test:lan": "cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml --example lan-test-host && node --disable-warning=ExperimentalWarning --import tsx --test apps/desktop/test/lan.test.ts"
+    "test:lan": "cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml --example lan-test-host && node --disable-warning=ExperimentalWarning --import tsx --test apps/desktop/test/lan.test.ts",
+    "test:mcp": "cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml --example mcp-test-host && node --disallow-code-generation-from-strings --disable-warning=ExperimentalWarning --import tsx --test apps/desktop/test/mcp.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
     "@types/react": "~19.2.2",
     "prettier": "^3.6.2",
     "tsx": "^4.23.15",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "zod": "4.6.7"
   }
 }

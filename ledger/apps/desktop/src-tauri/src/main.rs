@@ -1,10 +1,32 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use rusqlite::{params_from_iter, types::Value as SqlValue, Connection};
 use serde_json::{Map, Value};
-use std::{fs, sync::Mutex, time::Duration};
-use tauri::{Manager, State};
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+use tauri::{Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 mod lan;
+mod mcp;
+mod mcp_host;
+#[tauri::command]
+fn mcp_status(state: State<Arc<mcp::McpManager>>) -> Result<Value, String> {
+    state.status()
+}
+#[tauri::command]
+fn mcp_set_enabled(state: State<Arc<mcp::McpManager>>, enabled: bool) -> Result<Value, String> {
+    state.inner().set_enabled(enabled)
+}
+#[tauri::command]
+fn mcp_rotate_key(state: State<Arc<mcp::McpManager>>) -> Result<Value, String> {
+    state.inner().rotate()
+}
+#[tauri::command]
+fn mcp_respond(state: State<Arc<mcp::McpManager>>, id: String, response: Value) {
+    state.respond(id, response);
+}
 #[tauri::command]
 fn lan_start(state: State<lan::LanManager>, backup: String) -> Result<Value, String> {
     state.start(backup)
@@ -153,6 +175,7 @@ fn main() {
     tauri::Builder::default()
         .manage(lan::LanManager::default())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             let directory = app.path().app_data_dir()?;
             fs::create_dir_all(&directory)?;
@@ -172,6 +195,17 @@ fn main() {
             }
             db.busy_timeout(Duration::from_secs(3))?;
             app.manage(Database(Mutex::new(db)));
+            let handle = app.handle().clone();
+            let port = if app.config().identifier.ends_with(".uiqa") {
+                17842
+            } else {
+                17841
+            };
+            app.manage(mcp::McpManager::new(
+                directory,
+                port,
+                Arc::new(move |request| handle.emit("ledger-mcp-request", request).is_ok()),
+            ));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -183,7 +217,11 @@ fn main() {
             lan_start,
             lan_status,
             lan_stop,
-            lan_complete
+            lan_complete,
+            mcp_status,
+            mcp_set_enabled,
+            mcp_rotate_key,
+            mcp_respond
         ])
         .run(tauri::generate_context!())
         .expect("Unable to start local ledger");

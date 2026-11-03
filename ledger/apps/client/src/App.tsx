@@ -88,6 +88,8 @@ import {
 import { SmallIcon, LabelGlyph, AccountGlyph, iconNames } from "./icons";
 import { LanTransfer } from "./lan-transfer";
 import { LittleVault } from "./little-vault";
+import { McpSettings } from "./mcp-settings";
+import { startMcpBridge } from "./mcp-platform";
 import {
   FIRST_YEAR,
   LAST_YEAR,
@@ -110,6 +112,7 @@ type SettingsPage =
   | "backup"
   | "savedBackups"
   | "lan"
+  | "mcp"
   | "history"
   | "appearance"
   | "fonts"
@@ -119,6 +122,7 @@ const settingsTitles: Record<SettingsPage, string> = {
   labels: "标签管理",
   backup: "备份与迁移",
   lan: "局域网传输",
+  mcp: "AI 连接（MCP）",
   savedBackups: "自动备份",
   history: "变更记录",
   appearance: "外观",
@@ -1742,6 +1746,20 @@ export function LedgerApp({
     setSnap(await repo.snapshot());
   }, [repo]);
   useEffect(() => {
+    let closed = false;
+    let stop: (() => void) | undefined;
+    void startMcpBridge(() => repo.snapshot())
+      .then((cleanup) => {
+        if (closed) cleanup();
+        else stop = cleanup;
+      })
+      .catch(() => setNotice("AI 连接暂不可用，请重新打开应用后重试"));
+    return () => {
+      closed = true;
+      stop?.();
+    };
+  }, [repo]);
+  useEffect(() => {
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active")
         void refresh().catch((e) => setNotice(errorText(e)));
@@ -2732,6 +2750,12 @@ export function LedgerApp({
                       />
                     </View>
                     <SettingsRow
+                      title="AI 连接（MCP）"
+                      description="外部 AI 只读查询与连接说明"
+                      icon={Wifi}
+                      onPress={() => setSettingsPage("mcp")}
+                    />
+                    <SettingsRow
                       title={`关于${appName}`}
                       description="版本与本地数据说明"
                       icon={Info}
@@ -2788,6 +2812,7 @@ export function LedgerApp({
                   </>
                 )}
                 {settingsPage === "fonts" && <FontSettings />}
+                {settingsPage === "mcp" && <McpSettings />}
                 {settingsPage === "labels" && (
                   <>
                     <Segments

@@ -148,3 +148,14 @@ All earlier Android interaction checks used a physical device, not an emulator. 
 Limits: no user ledger was used for whole-book migration/share tests. The export check verified generation, chooser opening and cancellation; actual receipt by another app/device was intentionally not exercised. Windows and iOS native builds/acceptance are pending. Successful builds and these checks do not constitute a public-release certification.
 
 Known constraints and dependency-audit notes are in [development](./DEVELOPMENT.md). The APK uses a development key and is an internal test artifact, not a signed public release.
+
+## Read-only MCP — 2026-11-03
+
+- Type checking and the 26 existing domain/storage/CLI/client tests pass. Four native Rust tests pass, including two MCP key-lifecycle/cancellation cases.
+- The official MCP client passes all seven integration checks against the real loopback Rust adapter and a synthetic in-memory ledger. Delayed TCP headers/body reproduce the macOS nonblocking-inheritance failure and pass after explicitly restoring blocking reads. Twenty repeated runs pass with dynamic code generation disabled.
+- The isolated macOS QA release app shows the Settings entry, starts with access off, copies configuration, confirms key rotation, keeps access enabled when leaving Settings, and closes the listener when switched off. All five tools pass through the packaged Tauri event bridge and unchanged release CSP over ten fresh connections after the final rebuild. No regular ledger or real financial records were queried.
+- Android resources export successfully; phone-side MCP is instructions only. The macOS arm64 app builds, with an ad hoc signed drag-install DMG. Windows and individual external AI client setup still require separate native acceptance; the installer is not Developer ID signed or notarized.
+
+The Copy for AI follow-up passes type checking and the macOS QA release flow: the user first explicitly enables the access switch, then copies the complete instructions through the system clipboard; copying itself never enables access. Advanced connection information starts collapsed and expands on demand. Copying produces zero MCP requests and does not read the ledger. Only clipboard write-text permission is granted. Synthetic instruction checks preserve the current connection JSON and reject disabled status.
+
+Access-switch correction: the rebuilt macOS QA app starts with access off, Copy for AI disabled and the loopback port closed. Explicitly enabling the switch makes copying available; copying succeeds without changing permission. Switching access off disables copying again and closes the listener, verified by a refused local connection.
