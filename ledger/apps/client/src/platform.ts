@@ -8,6 +8,8 @@ export {
   saveAppearance,
   loadVaultPreference,
   saveVaultPreference,
+  loadVaultPreviewDiscovery,
+  saveVaultPreviewDiscovered,
   loadAssetVisibility,
   saveAssetVisibility,
 } from "./platform.native";

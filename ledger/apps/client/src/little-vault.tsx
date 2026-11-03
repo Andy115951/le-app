@@ -1,6 +1,6 @@
 import React, { useId } from "react";
 import { Pressable, View } from "react-native";
-import { Eye, EyeOff } from "lucide-react-native";
+import { Eye, EyeOff, Info } from "lucide-react-native";
 import Svg, {
   Circle,
   ClipPath,
@@ -124,14 +124,53 @@ function ClosedVault() {
   );
 }
 
-export function LittleVault({ netMinor }: { netMinor: number }) {
+export function LittleVault({
+  netMinor,
+  onPreview,
+  showPreviewLabel = false,
+}: {
+  netMinor: number;
+  onPreview: () => void;
+  showPreviewLabel?: boolean;
+}) {
   // Mounted only on Assets. Separate session state from numeric asset privacy.
   const privacy = useAssetPrivacyController(true);
   const Icon = privacy.visible ? Eye : EyeOff;
   return (
     <View style={{ gap: 6 }}>
       <View style={s.between}>
-        <Text style={s.muted}>小金库</Text>
+        <View style={[s.row, { gap: 2, flexShrink: 1 }]}>
+          <Text style={s.muted}>小金库</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="金库说明与预览"
+            accessibilityHint="用演示金额查看不同金库，不影响真实资产"
+            onPress={onPreview}
+            style={[
+              s.row,
+              { gap: 5, minWidth: 44, minHeight: 44, paddingHorizontal: 7 },
+            ]}
+          >
+            <Info size={16} color={c.muted} />
+            {showPreviewLabel && (
+              <Text
+                style={[
+                  s.muted,
+                  {
+                    fontSize: 11,
+                    lineHeight: 18,
+                    color: c.brand,
+                    backgroundColor: c.soft,
+                    borderRadius: 4,
+                    paddingHorizontal: 6,
+                  },
+                ]}
+              >
+                可预览
+              </Text>
+            )}
+          </Pressable>
+        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={privacy.visible ? "隐藏金库内容" : "显示金库内容"}

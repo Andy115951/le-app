@@ -16,6 +16,7 @@
     "@ledger/core": "0.1.0",
     "@ledger/storage": "0.1.0",
     "@modelcontextprotocol/sdk": "1.32.2",
+    "@react-native-community/slider": "5.2.0",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-clipboard-manager": "2.5.0",
     "@tauri-apps/plugin-dialog": "^2.0.0",

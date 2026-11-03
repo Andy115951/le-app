@@ -48,6 +48,7 @@ import {
   Check,
   Search,
   SlidersHorizontal,
+  Sparkles,
   Type,
   Delete,
   X,
@@ -88,6 +89,8 @@ import {
 import { SmallIcon, LabelGlyph, AccountGlyph, iconNames } from "./icons";
 import { LanTransfer } from "./lan-transfer";
 import { LittleVault } from "./little-vault";
+import { VaultPreview } from "./vault-preview";
+import { useVaultPreviewHint } from "./vault-preview-hint";
 import { McpSettings } from "./mcp-settings";
 import { startMcpBridge } from "./mcp-platform";
 import {
@@ -115,6 +118,7 @@ type SettingsPage =
   | "mcp"
   | "history"
   | "appearance"
+  | "vaultPreview"
   | "fonts"
   | "about";
 const settingsTitles: Record<SettingsPage, string> = {
@@ -126,6 +130,7 @@ const settingsTitles: Record<SettingsPage, string> = {
   savedBackups: "自动备份",
   history: "变更记录",
   appearance: "外观",
+  vaultPreview: "金库预览",
   fonts: "字体",
   about: `关于${appName}`,
 };
@@ -1698,7 +1703,19 @@ export function LedgerApp({
   const [formKey, setFormKey] = useState(0);
   const [formPreset, setFormPreset] = useState<EntryPreset>();
   const [settingsPage, setSettingsPage] = useState<SettingsPage>("home");
+  const [vaultPreviewFrom, setVaultPreviewFrom] = useState<
+    "assets" | "appearance"
+  >("appearance");
   const appearance = useAppearance();
+  const vaultPreviewHint = useVaultPreviewHint(
+    tab === "assets" && appearance.vaultEnabled && !appearance.vaultBusy,
+  );
+  const openVaultPreview = (from: "assets" | "appearance") => {
+    vaultPreviewHint.dismiss();
+    setVaultPreviewFrom(from);
+    setSettingsPage("vaultPreview");
+    setTab("settings");
+  };
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [detailFilters, setDetailFilters] = useState(false);
@@ -1721,14 +1738,19 @@ export function LedgerApp({
   const [backupListLoading, setBackupListLoading] = useState(false);
   const [backupListError, setBackupListError] = useState("");
   const backFromSettings = useCallback(() => {
+    if (settingsPage === "vaultPreview" && vaultPreviewFrom === "assets") {
+      setSettingsPage("home");
+      setTab("assets");
+      return;
+    }
     setSettingsPage((page) =>
       page === "savedBackups" || page === "lan"
         ? "backup"
-        : page === "fonts"
+        : page === "fonts" || page === "vaultPreview"
           ? "appearance"
           : "home",
     );
-  }, []);
+  }, [settingsPage, vaultPreviewFrom]);
   useEffect(() => {
     if (Platform.OS !== "android") return;
     const subscription = BackHandler.addEventListener(
@@ -2072,22 +2094,30 @@ export function LedgerApp({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={
-                  settingsPage === "savedBackups" || settingsPage === "lan"
-                    ? "返回备份与迁移"
-                    : settingsPage === "fonts"
-                      ? "返回外观"
-                      : "返回设置"
+                  settingsPage === "vaultPreview" &&
+                  vaultPreviewFrom === "assets"
+                    ? "返回资产"
+                    : settingsPage === "savedBackups" || settingsPage === "lan"
+                      ? "返回备份与迁移"
+                      : settingsPage === "fonts" ||
+                          settingsPage === "vaultPreview"
+                        ? "返回外观"
+                        : "返回设置"
                 }
                 onPress={backFromSettings}
                 style={[s.row, { alignSelf: "flex-start", minHeight: 30 }]}
               >
                 <ChevronLeft color={c.brand} size={17} />
                 <Text style={[s.muted, { color: c.brand }]}>
-                  {settingsPage === "savedBackups" || settingsPage === "lan"
-                    ? "备份与迁移"
-                    : settingsPage === "fonts"
-                      ? "外观"
-                      : "设置"}
+                  {settingsPage === "vaultPreview" &&
+                  vaultPreviewFrom === "assets"
+                    ? "资产"
+                    : settingsPage === "savedBackups" || settingsPage === "lan"
+                      ? "备份与迁移"
+                      : settingsPage === "fonts" ||
+                          settingsPage === "vaultPreview"
+                        ? "外观"
+                        : "设置"}
                 </Text>
               </Pressable>
             )}
@@ -2450,7 +2480,11 @@ export function LedgerApp({
                     value={`¥ ${amountText(wealth.netMinor)}`}
                   />
                   {appearance.vaultEnabled && (
-                    <LittleVault netMinor={wealth.netMinor} />
+                    <LittleVault
+                      netMinor={wealth.netMinor}
+                      onPreview={() => openVaultPreview("assets")}
+                      showPreviewLabel={vaultPreviewHint.visible}
+                    />
                   )}
                   <View style={s.summaryRow}>
                     <View style={s.summaryCell}>
@@ -2791,12 +2825,18 @@ export function LedgerApp({
                       />
                     </View>
                     <Text style={s.muted}>
-                      1 万元一块金块，1 千元一枚金币，100
+                      1 万元一块金块，1 千元一根金条，100 元一枚金币，10
                       元一颗金粒，零头为金粉。金库有独立的小眼睛，离页或进入后台自动合上。
                     </Text>
                     {appearance.vaultError !== "" && (
                       <Text style={s.error}>{appearance.vaultError}</Text>
                     )}
+                    <SettingsRow
+                      title="金库预览"
+                      description="拖动金额，看看不同积攒的样子"
+                      icon={Sparkles}
+                      onPress={() => openVaultPreview("appearance")}
+                    />
                     <SettingsRow
                       title="字体"
                       description={`${fontChoices.find((f) => f.id === appearance.choice)?.name} · 点击选择`}
@@ -2812,6 +2852,7 @@ export function LedgerApp({
                   </>
                 )}
                 {settingsPage === "fonts" && <FontSettings />}
+                {settingsPage === "vaultPreview" && <VaultPreview />}
                 {settingsPage === "mcp" && <McpSettings />}
                 {settingsPage === "labels" && (
                   <>

@@ -1,12 +1,13 @@
 import React from "react";
 import { registerRootComponent } from "expo";
-import { View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { emptyLedger, execute, type Command } from "@ledger/core";
 import { LedgerApp, type LedgerViewRepository } from "../client/src/App";
 import { AppearanceProvider, Text } from "../client/src/appearance";
 import { colors, styles } from "../client/src/theme";
 import { VaultGallery } from "./VaultGallery";
+import { VaultPreview } from "../client/src/vault-preview";
 
 // Fixed fictional fixture, created through the same public rules as the app.
 // This entry never calls openLedger or opens a database/IPC connection.
@@ -52,6 +53,10 @@ const repo: LedgerViewRepository = {
   readBackup: rejectWrite,
 };
 function UiQa() {
+  const view =
+    typeof location === "undefined"
+      ? null
+      : new URLSearchParams(location.search).get("view");
   return (
     <SafeAreaProvider>
       <AppearanceProvider>
@@ -67,9 +72,22 @@ function UiQa() {
               界面 QA · 虚构数据 · 只读预览
             </Text>
           </View>
-          {typeof location !== "undefined" &&
-          new URLSearchParams(location.search).get("view") === "vault" ? (
+          {view === "vault" ? (
             <VaultGallery />
+          ) : view === "vault-preview" ? (
+            <ScrollView
+              style={{ flex: 1, backgroundColor: colors.bg }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View
+                style={[styles.content, { maxWidth: 720, paddingBottom: 32 }]}
+              >
+                <Text variant="heading" style={styles.title}>
+                  金库预览
+                </Text>
+                <VaultPreview />
+              </View>
+            </ScrollView>
           ) : (
             <LedgerApp repo={repo} initial={snapshot} />
           )}

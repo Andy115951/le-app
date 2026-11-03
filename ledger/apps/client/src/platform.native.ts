@@ -13,6 +13,10 @@ export const loadVaultPreference = () =>
   Storage.getItemAsync("ledger.appearance.vault.v1");
 export const saveVaultPreference = (enabled: boolean) =>
   Storage.setItemAsync("ledger.appearance.vault.v1", String(enabled));
+export const loadVaultPreviewDiscovery = () =>
+  Storage.getItemAsync("ledger.discovery.vault-preview.v1");
+export const saveVaultPreviewDiscovered = () =>
+  Storage.setItemAsync("ledger.discovery.vault-preview.v1", "acknowledged");
 export const loadAssetVisibility = () =>
   Storage.getItemAsync("ledger.privacy.asset-visible.v1");
 export const saveAssetVisibility = (visible: boolean) =>

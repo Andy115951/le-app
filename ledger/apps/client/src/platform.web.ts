@@ -15,6 +15,14 @@ export const saveVaultPreference = async (enabled: boolean) => {
   );
 };
 export const randomUUID = () => globalThis.crypto.randomUUID();
+export const loadVaultPreviewDiscovery = async () =>
+  globalThis.localStorage.getItem("ledger.discovery.vault-preview.v1");
+export const saveVaultPreviewDiscovered = async () => {
+  globalThis.localStorage.setItem(
+    "ledger.discovery.vault-preview.v1",
+    "acknowledged",
+  );
+};
 export const loadAssetVisibility = async () =>
   globalThis.localStorage.getItem("ledger.privacy.asset-visible.v1");
 export const saveAssetVisibility = async (visible: boolean) => {
