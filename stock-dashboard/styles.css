@@ -1340,7 +1340,22 @@ body {
 .command-links,
 .command-actions { display: flex; align-items: center; gap: 6px; }
 
-.app > [id] { scroll-margin-top: 84px; }
+.workspace-tabs { flex: 1; min-width: 0; }
+
+.workspace-shell {
+  order: 2;
+  min-width: 0;
+}
+
+.workspace-view {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.workspace-view[hidden] { display: none; }
+.workspace-view > * { order: initial !important; }
+.workspace-view > [id] { scroll-margin-top: 84px; }
 
 .command-link {
   min-height: 36px;
@@ -1355,6 +1370,7 @@ body {
 
 .command-link:hover,
 .command-link.is-active { color: var(--brand); background: #edf3ff; }
+.workspace-tabs .command-link { min-width: 74px; }
 .command-bar .btn { min-height: 38px; border-radius: 10px; padding: 0 13px; font-size: 0.88rem; }
 
 .overview-grid { order: 2; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 18px; }
@@ -2724,18 +2740,17 @@ select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(43, 97, 21
   .top .title { font-size: 1.6rem; }
   .top-actions { flex-wrap: wrap; }
   .command-links {
+    display: grid;
     flex: 1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     min-width: 0;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-    /* stronger right-edge fade to signal scrollable content */
-    -webkit-mask-image: linear-gradient(to right, black 70%, transparent 100%);
-    mask-image: linear-gradient(to right, black 70%, transparent 100%);
+    overflow: visible;
+    padding-bottom: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
-  .command-links::-webkit-scrollbar { display: none; }
-  .command-link { white-space: nowrap; }
-  .app > [id] { scroll-margin-top: 128px; }
+  .command-link { min-width: 0 !important; padding: 0 6px; white-space: normal; }
+  .workspace-view > [id] { scroll-margin-top: 128px; }
   .command-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .command-actions .btn { width: 100%; }
   .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }

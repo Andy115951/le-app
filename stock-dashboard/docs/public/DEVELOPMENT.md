@@ -14,6 +14,24 @@ node ../node_modules/vercel/dist/index.js dev
 
 Node.js tests and most maintenance scripts do not require a frontend build. When changing static modules, check that the PWA shell cache includes any new local modules.
 
+## Workspace navigation and loading
+
+The client groups existing panels into four URL-addressable workspaces:
+`#today`, `#calendar`, `#portfolio`, and `#research`. Their section registry
+lives in `lib/workspace-navigation.mjs`. Keep each panel in exactly one
+workspace so the compact navigation, local page map, and mobile tab order stay
+consistent.
+
+The default `Today` workspace loads quotes plus daily context. Calendar and
+research APIs are deferred until their workspace opens. Do not restore a
+single startup `Promise.all` for every research endpoint: it makes the daily
+view wait for advanced, optional material. Existing section hashes such as
+`#marketCalendar` remain supported and open the appropriate workspace before
+scrolling to that panel.
+
+When adding a local client module, add it to `pwa-app-shell.mjs` and update the
+service-worker cache version. The PWA cache-policy test enforces this contract.
+
 ## Data and configuration
 
 Personal watchlists, preferences, and logs are stored in the browser by default. The app accepts the Supabase URL and public key for sync and also persists the login session in the browser. Server secrets are used only by APIs and maintenance tasks.

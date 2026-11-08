@@ -33,28 +33,25 @@
       </div>
     </header>
 
-    <nav class="command-bar" aria-label="看板导航">
-      <div class="command-links">
-        <button type="button" class="command-link is-active" data-scroll-target="beginnerReadingHome">今日怎么读</button>
-        <button type="button" class="command-link" data-scroll-target="marketOverview">Nasdaq 100</button>
-        <button type="button" class="command-link" data-scroll-target="marketEvents">动态新闻</button>
-        <button type="button" class="command-link" data-scroll-target="personalObservations">观察记录</button>
-        <button type="button" class="command-link" data-scroll-target="decisionLog">决策日志</button>
-        <button type="button" class="command-link" data-scroll-target="marketCalendar">市场日历</button>
-        <button type="button" class="command-link" data-scroll-target="researchReplay">研究回放</button>
-        <button type="button" class="command-link" data-scroll-target="researchQuality">研究覆盖</button>
-        <button type="button" class="command-link" data-scroll-target="dailyResearchReports">每日研究</button>
-        <button type="button" class="command-link" data-scroll-target="weeklyResearchReports">每周汇总</button>
-        <button type="button" class="command-link" data-scroll-target="researchTaskBoard">任务看板</button>
-        <button type="button" class="command-link" data-scroll-target="eventReviewQueue">归因审核</button>
-        <button type="button" class="command-link" data-scroll-target="modelReview">模型复核</button>
-        <button type="button" class="command-link" data-scroll-target="watchlist">个人持仓</button>
+    <nav class="command-bar" aria-label="工作区导航">
+      <div class="command-links workspace-tabs" role="tablist" aria-label="工作区">
+        <button type="button" class="command-link is-active" data-workspace-tab="today" role="tab" aria-selected="true" aria-controls="workspaceToday">今日</button>
+        <button type="button" class="command-link" data-workspace-tab="calendar" role="tab" aria-selected="false" aria-controls="workspaceCalendar">日历</button>
+        <button type="button" class="command-link" data-workspace-tab="portfolio" role="tab" aria-selected="false" aria-controls="workspacePortfolio">我的</button>
+        <button type="button" class="command-link" data-workspace-tab="research" role="tab" aria-selected="false" aria-controls="workspaceResearch">研究</button>
       </div>
       <div class="command-actions">
         <button type="button" class="btn btn-ghost" id="toggleToolsBtn">个人规则</button>
         <button type="button" class="btn btn-primary" id="addStockBtn">+ 添加持仓</button>
       </div>
     </nav>
+
+    <div class="workspace-shell" aria-live="polite">
+      <section class="workspace-view" id="workspaceToday" data-workspace-view="today" role="tabpanel" aria-label="今日工作区"></section>
+      <section class="workspace-view" id="workspaceCalendar" data-workspace-view="calendar" role="tabpanel" aria-label="日历工作区" hidden></section>
+      <section class="workspace-view" id="workspacePortfolio" data-workspace-view="portfolio" role="tabpanel" aria-label="我的工作区" hidden></section>
+      <section class="workspace-view" id="workspaceResearch" data-workspace-view="research" role="tabpanel" aria-label="研究工作区" hidden></section>
+    </div>
 
     <section class="card cloud-card utility-card hidden" id="cloudPanel">
       <div class="cloud-head">
@@ -186,7 +183,7 @@
       </div>
     </section>
 
-    <section class="stats-grid">
+    <section class="stats-grid" id="personalStats">
       <article class="card stat-card">
         <span class="stat-label">个人标的</span>
         <strong class="stat-value" id="countStat">0</strong>

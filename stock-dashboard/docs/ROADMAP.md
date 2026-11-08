@@ -24,6 +24,9 @@ move, or generate trading instructions.
 - Optional model explanations are separated from deterministic research. They
   require configuration and a deliberate user action or server-side approval
   gate, depending on the feature.
+- The client is organized into four URL-addressable workspaces: `Today`,
+  `Calendar`, `Portfolio`, and `Research`. The daily workspace remains the
+  default; calendar and research reads load only when their workspace opens.
 
 ## Priorities
 

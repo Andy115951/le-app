@@ -14,6 +14,14 @@ node ../node_modules/vercel/dist/index.js dev
 
 Node.js 测试和大多数维护脚本不依赖前端构建。修改静态模块时，同时检查 PWA 壳缓存是否覆盖新增的本地模块。
 
+## 工作区导航与加载
+
+客户端把既有面板分成四个可通过 URL 直达的工作区：`#today`、`#calendar`、`#portfolio` 和 `#research`。章节登记集中在 `lib/workspace-navigation.mjs`。每个面板只能归属一个工作区，保证紧凑导航、局部章节地图和移动端 Tab 顺序一致。
+
+默认 `Today` 工作区加载行情和日常上下文。日历与研究 API 会延后到对应工作区打开后再读取。不要恢复为在启动时对全部研究接口执行单个 `Promise.all`：那会让日常页面等待高级且可选的材料。旧章节锚点，例如 `#marketCalendar`，仍然可用；页面会先打开正确工作区，再滚动到对应面板。
+
+新增本地客户端模块时，要同时添加到 `pwa-app-shell.mjs` 并更新 service worker 缓存版本。PWA 缓存策略测试会校验这个约定。
+
 ## 数据与配置
 
 个人自选、偏好和日志默认保存在浏览器。云同步的 Supabase URL 与公开 key 由页面配置，登录会话也在浏览器保存。服务端密钥只用于 API 和维护任务。

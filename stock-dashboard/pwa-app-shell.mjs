@@ -19,6 +19,7 @@ export const APP_SHELL = [
   "./lib/earnings-display.mjs",
   "./lib/glossary.mjs",
   "./lib/similar-display.mjs",
+  "./lib/workspace-navigation.mjs",
   "./assets/nasdaq-intelligence-icon.svg",
   "./manifest.webmanifest"
 ];

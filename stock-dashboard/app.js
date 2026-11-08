@@ -9,6 +9,7 @@ import { getPwaInstallPresentation, requestPwaInstall } from "./pwa-install.mjs"
 import { getEarningsTimingPresentation, getEarningsViewCopy, getEarningsViewRange, normalizeEarningsViewMode, selectEarningsForView } from "./lib/earnings-display.mjs";
 import { getSimilarMatchComponents } from "./lib/similar-display.mjs";
 import { canLoadSimilarDays, getSimilarDaysUnavailableMessage } from "./lib/calendar-similarity-display.mjs";
+import { WORKSPACE_IDS, getWorkspace, normalizeWorkspace, resolveWorkspaceHash } from "./lib/workspace-navigation.mjs";
 import {
   buildBeginnerReading,
   getBeginnerReadingView,
@@ -188,6 +189,9 @@ const state = {
   marketEvents: [],
   observations: [],
   decisionLogs: [],
+  activeWorkspace: "today",
+  workspaceLoaded: Object.fromEntries(WORKSPACE_IDS.map(function (id) { return [id, false]; })),
+  workspaceLoading: Object.create(null),
   marketEventsLoading: false,
   marketEventsError: "",
   marketEventsFetchedAt: 0,
@@ -295,6 +299,7 @@ const MAG7_ETF_SYMBOL = "MAGS";
 const NASDAQ_FOCUS_SYMBOLS = ["QQQ", "MAGS", "NVDA", "AAPL", "MU", "MSFT", "AMD", "AMZN", "TSLA", "GOOGL", "GOOG", "INTC", "META", "AVGO"];
 const NASDAQ_CORE_SYMBOLS = ["NVDA", "AAPL", "MU", "MSFT", "AMD", "AMZN", "TSLA", "GOOGL", "INTC", "META", "AVGO"];
 let deferredPwaInstallPrompt = null;
+let pageMinimapCleanup = null;
 
 init();
 
@@ -307,6 +312,7 @@ async function init() {
   state.marketEvents = saved.marketEvents || [];
   state.observations = saved.observations || [];
   state.decisionLogs = saved.decisionLogs || [];
+  initWorkspaces();
   bindEvents();
   initPageMinimap();
   setupPwa();
@@ -322,7 +328,7 @@ async function init() {
   updateCloudButtons();
   await initCloud(cloudConfig);
   await refreshQuotes();
-  await Promise.all([refreshUpcomingEarnings(), refreshMarketHistory(), refreshMarketCalendar(), refreshCurrentMarketScenario(), refreshResearchReplay(), refreshModelReview(), refreshResearchHealth(), refreshResearchQuality(), refreshResearchTasks(), refreshEventReview(), refreshDailyReports(), refreshWeeklyReports()]);
+  await loadWorkspace(state.activeWorkspace);
 }
 
 function openGlossaryPopover(chip) {
@@ -424,8 +430,125 @@ function buildDailyMarketEventsUrl(symbols, benchmarkChange) {
   return "./api/global-stock/daily-events?" + params.toString();
 }
 
+function getWorkspaceView(workspaceId) {
+  return document.querySelector('[data-workspace-view="' + normalizeWorkspace(workspaceId) + '"]');
+}
+
+function updateWorkspaceTabs() {
+  document.querySelectorAll("[data-workspace-tab]").forEach(function (button) {
+    const active = button.getAttribute("data-workspace-tab") === state.activeWorkspace;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+}
+
+function applyWorkspaceVisibility() {
+  WORKSPACE_IDS.forEach(function (workspaceId) {
+    const view = getWorkspaceView(workspaceId);
+    if (!view) return;
+    const active = workspaceId === state.activeWorkspace;
+    view.hidden = !active;
+    view.setAttribute("aria-hidden", String(!active));
+  });
+  document.body.dataset.workspace = state.activeWorkspace;
+  updateWorkspaceTabs();
+}
+
+function initWorkspaces() {
+  WORKSPACE_IDS.forEach(function (workspaceId) {
+    const workspace = getWorkspace(workspaceId);
+    const view = getWorkspaceView(workspaceId);
+    if (!view) return;
+    workspace.sections.forEach(function (section) {
+      const element = document.getElementById(section.id);
+      if (element && element.parentElement !== view) view.appendChild(element);
+    });
+  });
+
+  const initial = resolveWorkspaceHash(window.location.hash);
+  state.activeWorkspace = initial.workspaceId;
+  applyWorkspaceVisibility();
+
+  if (initial.sectionId) {
+    window.requestAnimationFrame(function () {
+      document.getElementById(initial.sectionId)?.scrollIntoView({ behavior: "auto", block: "start" });
+    });
+  }
+
+  window.addEventListener("hashchange", function () {
+    const destination = resolveWorkspaceHash(window.location.hash);
+    if (destination.workspaceId === state.activeWorkspace && !destination.sectionId) return;
+    void activateWorkspace(destination.workspaceId, {
+      updateHistory: false,
+      sectionId: destination.sectionId,
+      scrollToTop: false
+    });
+  });
+}
+
+async function loadWorkspace(workspaceId) {
+  const id = normalizeWorkspace(workspaceId);
+  if (state.workspaceLoaded[id]) return;
+  if (state.workspaceLoading[id]) return state.workspaceLoading[id];
+
+  const loaders = {
+    today: function () {
+      return Promise.all([refreshUpcomingEarnings(), refreshCurrentMarketScenario()]);
+    },
+    calendar: function () {
+      return Promise.all([refreshMarketCalendar(), refreshMarketHistory()]);
+    },
+    portfolio: function () {
+      render();
+      return Promise.resolve();
+    },
+    research: function () {
+      return Promise.all([
+        refreshResearchReplay(),
+        refreshModelReview(),
+        refreshResearchHealth(),
+        refreshResearchQuality(),
+        refreshResearchTasks(),
+        refreshEventReview(),
+        refreshDailyReports(),
+        refreshWeeklyReports()
+      ]);
+    }
+  };
+  const load = loaders[id] || loaders.today;
+  const promise = Promise.resolve().then(load).then(function () {
+    state.workspaceLoaded[id] = true;
+  }).finally(function () {
+    delete state.workspaceLoading[id];
+  });
+  state.workspaceLoading[id] = promise;
+  return promise;
+}
+
+async function activateWorkspace(workspaceId, options = {}) {
+  const id = normalizeWorkspace(workspaceId);
+  const changed = state.activeWorkspace !== id;
+  state.activeWorkspace = id;
+  applyWorkspaceVisibility();
+  initPageMinimap();
+
+  if (options.updateHistory !== false) {
+    window.history.pushState({}, "", "#" + id);
+  }
+  await loadWorkspace(id);
+
+  const target = options.sectionId ? document.getElementById(options.sectionId) : null;
+  if (target) {
+    target.scrollIntoView({ behavior: options.behavior || "smooth", block: "start" });
+  } else if (changed && options.scrollToTop !== false) {
+    getWorkspaceView(id)?.scrollIntoView({ behavior: options.behavior || "smooth", block: "start" });
+  }
+}
+
 
 function initPageMinimap() {
+  if (pageMinimapCleanup) pageMinimapCleanup();
   const root = document.getElementById("pageMinimap");
   const track = document.getElementById("pageMinimapTrack");
   const viewport = document.getElementById("pageMinimapViewport");
@@ -434,13 +557,12 @@ function initPageMinimap() {
   const fabProgress = document.getElementById("pageMinimapFabProgress");
   if (!root || !track) return;
 
-  const navButtons = Array.from(document.querySelectorAll(".command-links [data-scroll-target]"));
-  const sections = navButtons
-    .map(function (button) {
-      const id = button.getAttribute("data-scroll-target");
-      const el = document.getElementById(id);
-      if (!id || !el) return null;
-      return { id: id, el: el, label: (button.textContent || id).trim() };
+  const workspace = getWorkspace(state.activeWorkspace);
+  const sections = workspace.sections
+    .map(function (section) {
+      const el = document.getElementById(section.id);
+      if (!el) return null;
+      return { id: section.id, el: el, label: section.label };
     })
     .filter(Boolean);
 
@@ -449,9 +571,11 @@ function initPageMinimap() {
     return;
   }
 
+  root.hidden = false;
   document.body.classList.add("has-page-minimap");
   track.innerHTML = "";
   const itemById = new Map();
+  const events = new AbortController();
 
   sections.forEach(function (section) {
     const item = document.createElement("button");
@@ -466,7 +590,7 @@ function initPageMinimap() {
         root.classList.remove("is-open");
         if (fab) fab.setAttribute("aria-expanded", "false");
       }
-    });
+    }, { signal: events.signal });
     track.appendChild(item);
     itemById.set(section.id, item);
   });
@@ -477,13 +601,13 @@ function initPageMinimap() {
       const open = !root.classList.contains("is-open");
       root.classList.toggle("is-open", open);
       fab.setAttribute("aria-expanded", open ? "true" : "false");
-    });
+    }, { signal: events.signal });
     document.addEventListener("click", function (event) {
       if (!root.classList.contains("is-open")) return;
       if (root.contains(event.target)) return;
       root.classList.remove("is-open");
       fab.setAttribute("aria-expanded", "false");
-    });
+    }, { signal: events.signal });
   }
 
   function setProgress() {
@@ -509,9 +633,6 @@ function initPageMinimap() {
     itemById.forEach(function (item, key) {
       item.classList.toggle("is-active", key === id);
     });
-    document.querySelectorAll(".command-links [data-scroll-target]").forEach(function (button) {
-      button.classList.toggle("is-active", button.getAttribute("data-scroll-target") === id);
-    });
     const activeItem = itemById.get(id);
     if (activeItem && track.scrollHeight > track.clientHeight) {
       const top = activeItem.offsetTop - (track.clientHeight - activeItem.offsetHeight) / 2;
@@ -522,9 +643,6 @@ function initPageMinimap() {
   function setActiveScrollTarget(id) {
     paintActive(id);
   }
-
-  // Expose for the existing command-bar clicks so both UIs stay in sync.
-  window.__setPageMinimapActive = setActiveScrollTarget;
 
   const visibility = new Map();
   const observer = new IntersectionObserver(function (entries) {
@@ -565,10 +683,16 @@ function initPageMinimap() {
       ticking = false;
     });
   }
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", setProgress);
+  window.addEventListener("scroll", onScroll, { passive: true, signal: events.signal });
+  window.addEventListener("resize", setProgress, { signal: events.signal });
   setProgress();
   paintActive(sections[0].id);
+  pageMinimapCleanup = function () {
+    events.abort();
+    observer.disconnect();
+    root.classList.remove("is-open");
+    if (fab) fab.setAttribute("aria-expanded", "false");
+  };
 }
 
 function bindEvents() {
@@ -589,48 +713,29 @@ function bindEvents() {
   }
 
   [els.addStockBtn, els.addStockInlineBtn].filter(Boolean).forEach(function (button) {
-    button.addEventListener("click", function () {
+    button.addEventListener("click", async function () {
+      await activateWorkspace("portfolio");
       revealPanel(els.stockFormPanel, els.symbolInput);
     });
   });
 
   if (els.toggleCloudBtn) {
-    els.toggleCloudBtn.addEventListener("click", function () {
+    els.toggleCloudBtn.addEventListener("click", async function () {
+      await activateWorkspace("portfolio");
       togglePanel(els.cloudPanel, els.toggleCloudBtn);
     });
   }
 
   if (els.toggleToolsBtn) {
-    els.toggleToolsBtn.addEventListener("click", function () {
+    els.toggleToolsBtn.addEventListener("click", async function () {
+      await activateWorkspace("portfolio");
       togglePanel(els.toolsPanel, els.toggleToolsBtn);
     });
   }
 
-  document.querySelectorAll(".command-links [data-scroll-target]").forEach(function (button) {
+  document.querySelectorAll("[data-workspace-tab]").forEach(function (button) {
     button.addEventListener("click", function () {
-      const targetId = button.getAttribute("data-scroll-target");
-      const target = document.getElementById(targetId);
-      if (!target) return;
-      if (typeof window.__setPageMinimapActive === "function") {
-        window.__setPageMinimapActive(targetId);
-      } else {
-        document.querySelectorAll(".command-links [data-scroll-target]").forEach(function (item) {
-          item.classList.toggle("is-active", item === button);
-        });
-      }
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      // On the horizontally-scrolling mobile nav, center the active item within
-      // its own strip so the user can see which section they are in (with 14
-      // entries in a ~333px strip it can otherwise sit far off-screen). Adjust
-      // only the strip's horizontal scroll, never the page's vertical scroll.
-      const strip = button.closest(".command-links");
-      if (strip && strip.scrollWidth > strip.clientWidth) {
-        const targetLeft = button.offsetLeft - (strip.clientWidth - button.offsetWidth) / 2;
-        // Instant scroll: smooth horizontal scroll on this masked strip proved
-        // unreliable (the animation could be dropped, leaving the active item
-        // off-screen). A direct jump always lands the item in view.
-        strip.scrollLeft = Math.max(0, targetLeft);
-      }
+      void activateWorkspace(button.getAttribute("data-workspace-tab"));
     });
   });
 
